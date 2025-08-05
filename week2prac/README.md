@@ -1,58 +1,101 @@
+# Website Availability Monitor with AWS CDK
 
-# Welcome to your CDK Python project!
+This project uses **AWS CDK (Python)** to deploy a monitoring solution for [https://www.nytimes.com](https://www.nytimes.com). It consists of:
 
-This is a blank project for CDK development with Python.
+* An AWS **Lambda function** that checks website latency, HTTP status, and availability
+* An **EventBridge rule** that runs the Lambda every 5 minutes
+* **Custom CloudWatch metrics** for latency, availability, and status codes
 
-The `cdk.json` file tells the CDK Toolkit how to execute your app.
 
-This project is set up like a standard Python project.  The initialization
-process also creates a virtualenv within this project, stored under the `.venv`
-directory.  To create the virtualenv it assumes that there is a `python3`
-(or `python` for Windows) executable in your path with access to the `venv`
-package. If for any reason the automatic creation of the virtualenv fails,
-you can create the virtualenv manually.
+---
 
-To manually create a virtualenv on MacOS and Linux:
+## Getting Started
 
-```
-$ python -m venv .venv
-```
+### 1. Prerequisites
 
-After the init process completes and the virtualenv is created, you can use the following
-step to activate your virtualenv.
+* AWS CLI configured
+* Python 3.10 or newer
+* AWS CDK installed globally:
 
-```
-$ source .venv/bin/activate
+```bash
+npm install -g aws-cdk
 ```
 
-If you are a Windows platform, you would activate the virtualenv like this:
+### 2. Set Up the Project
 
-```
-% .venv\Scripts\activate.bat
-```
+```bash
+# Set up virtual environment
+python3 -m venv .venv
+source .venv/bin/activate
 
-Once the virtualenv is activated, you can install the required dependencies.
-
-```
-$ pip install -r requirements.txt
-```
-
-At this point you can now synthesize the CloudFormation template for this code.
-
-```
-$ cdk synth
+# Install dependencies
+pip install -r requirements.txt
 ```
 
-To add additional dependencies, for example other CDK libraries, just add
-them to your `setup.py` file and rerun the `pip install -r requirements.txt`
-command.
+### 3. Bootstrap & Deploy
 
-## Useful commands
+Replace `YOUR_ACCOUNT_ID` in `app.py` with your AWS Account ID.
 
- * `cdk ls`          list all stacks in the app
- * `cdk synth`       emits the synthesized CloudFormation template
- * `cdk deploy`      deploy this stack to your default AWS account/region
- * `cdk diff`        compare deployed stack with current state
- * `cdk docs`        open CDK documentation
+Then run:
 
-Enjoy!
+```bash
+cdk bootstrap
+cdk deploy
+```
+
+---
+
+## What It Does
+
+Every 5 minutes, a Lambda function runs that:
+
+* Sends an HTTP GET request to `https://www.nytimes.com`
+* Measures latency in milliseconds
+* Records the HTTP status code
+* Publishes custom CloudWatch metrics:
+
+  * `NYTMonitor/Latency`
+  * `NYTMonitor/Availability`
+  * `NYTMonitor/StatusCode_200` (and others if they occur)
+
+---
+
+## Viewing Results
+
+### CloudWatch → Metrics
+
+1. Go to **CloudWatch > Metrics**
+2. Choose **Custom namespaces**
+3. Select **`NYTMonitor`**
+4. View:
+
+   * `Latency`
+   * `Availability`
+   * `StatusCode_200`, `StatusCode_500`, etc.
+
+### CloudWatch → Logs
+
+1. Go to **CloudWatch > Logs > Log groups**
+2. Look for the group starting with `/aws/lambda/MonitorNYT`
+3. Inspect logs for details on each execution
+
+---
+
+## Optional Enhancements
+
+* Add CloudWatch **alarms** for availability drops
+* Add **SNS or email alerts**
+* Monitor multiple URLs
+* Visualize with a **CloudWatch dashboard**
+
+---
+
+## Cleanup
+
+To delete all resources created:
+
+```bash
+cdk destroy
+```
+
+

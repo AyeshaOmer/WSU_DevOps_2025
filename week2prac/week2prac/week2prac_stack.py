@@ -1,47 +1,27 @@
 from aws_cdk import (
-    Duration,
     Stack,
-    aws_iam as iam,
+    Duration,
+    aws_lambda as lambda_,
+    aws_events as events,
+    aws_events_targets as targets,
 )
-from aws_cdk.aws_synthetics_alpha import Canary, Schedule, Runtime, Code, Test
 from constructs import Construct
+import os
 
 class Week2PracStack(Stack):
+    def __init__(self, scope: Construct, id: str, **kwargs):
+        super().__init__(scope, id, **kwargs)
 
-    def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
-        super().__init__(scope, construct_id, **kwargs)
-
-        canary = Canary(self, "WebMonitorCanary",
-            canary_name="nytimes-monitor",
-            runtime=Runtime.SYNTHETICS_NODEJS_PUPPETEER_3_9,
-            test=Test.custom(
-                code=Code.from_inline("""
-                    const synthetics = require('Synthetics');
-                    const log = require('SyntheticsLogger');
-
-                    const pageLoadBlueprint = async function () {
-                        let page = await synthetics.getPage();  
-                        const url = 'https://www.nytimes.com';
-                        const response = await page.goto(url, { waitUntil: 'load', timeout: 30000 });
-
-                        const status = response.status();
-                        log.info("HTTP Status Code: " + status);
-
-                        if (status !== 200) {
-                            throw new Error("Failed to load page with status: " + status);
-                        }
-                    };
-
-                    exports.handler = async () => {
-                        return await pageLoadBlueprint();
-                    };
-                """),
-                handler="index.handler"
-            ),
-            schedule=Schedule.rate(Duration.minutes(5)),
-            start_after_creation=True
+        # Lambda function
+        monitor_fn = lambda_.Function(self, "MonitorNYT",
+            runtime=lambda_.Runtime.PYTHON_3_12,
+            handler="monitor.lambda_handler",
+            code=lambda_.Code.from_asset(os.path.join(os.getcwd(), "lambda")),
+            timeout=Duration.seconds(10),
         )
 
-        canary.role.add_managed_policy(
-            iam.ManagedPolicy.from_aws_managed_policy_name("CloudWatchSyntheticsFullAccess")
+        # EventBridge rule to run every 5 minutes
+        events.Rule(self, "MonitorSchedule",
+            schedule=events.Schedule.rate(Duration.minutes(5)),
+            targets=[targets.LambdaFunction(monitor_fn)]
         )
