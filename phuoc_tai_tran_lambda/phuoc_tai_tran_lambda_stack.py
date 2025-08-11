@@ -1,5 +1,6 @@
 from aws_cdk import (
     Duration,
+    RemovalPolicy,
     Stack,
     aws_lambda as _lambda,
     aws_apigateway as apigw,
@@ -17,9 +18,22 @@ class PhuocTaiTranLambdaStack(Stack):
         fn = _lambda.Function( 
         self, "PhuocTaiTranLambda",
         runtime=_lambda.Runtime.PYTHON_3_12,
-        handler="index.handler",
+        handler="ObtainMetrics_2.handler",
         code = _lambda.Code.from_asset("lib/lambda-handler"),
         )
+
+        fn_hello = _lambda.Function(
+        self, "PhuocTaiTranHelloLambda",
+        runtime=_lambda.Runtime.PYTHON_3_12,
+        handler="helloLambda.handler",
+        code=_lambda.Code.from_asset("lib/lambda-handler"),
+        )
+
+        fn_log_group = fn.log_group
+        fn_log_group.apply_removal_policy(RemovalPolicy.DESTROY)
+        
+        fn_log_group_2 = fn_hello.log_group
+        fn_log_group_2.apply_removal_policy(RemovalPolicy.DESTROY)
 
         endpoint = apigw.LambdaRestApi(
         self, "ApiGwEndpoint",
@@ -31,5 +45,7 @@ class PhuocTaiTranLambdaStack(Stack):
         rule = events.Rule(
             self, "ScheduleRule",
             schedule=events.Schedule.rate(Duration.minutes(15)),
-            targets=[targets.LambdaFunction(fn)]
+            targets=[targets.LambdaFunction(fn),
+                     targets.LambdaFunction(fn_hello)]
         )
+
