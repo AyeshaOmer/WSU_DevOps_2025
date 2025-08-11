@@ -1,7 +1,8 @@
 from aws_cdk import (
     # Duration,
     Stack,
-    # aws_sqs as sqs,
+    aws_lambda as lambda_,
+    #aws_logs as logs
 )
 from constructs import Construct
 
@@ -10,10 +11,9 @@ class BraydenStack(Stack):
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
-        # The code that defines your stack goes here
-
-        # example resource
-        # queue = sqs.Queue(
-        #     self, "BraydenQueue",
-        #     visibility_timeout=Duration.seconds(300),
-        # )
+    fn = lambda_.Function(self, "WanMONLambda",
+    runtime=lambda_.Runtime.PYTHON_3_12,
+    handler="WanMONLambda.lambda_handler",
+    code=lambda_.Code.from_asset("./modules")
+    log_removal_policy = Removal.DESTROY
+)
