@@ -56,7 +56,7 @@ def lambda_handler(event, context):
         }
 
     except requests.exceptions.RequestException as e:
-        # If the request fails, the site is unavailable. Publish 0 for availability.
+        # If the request fails submit a 0
         cloudwatch.put_metric_data(
             MetricData=[
                 {
@@ -68,7 +68,7 @@ def lambda_handler(event, context):
             ],
             Namespace=WAN_MANESPACE
         )
-        # You could also publish a latency value indicating failure, e.g., -1
+        # if the latency submit a -1
         cloudwatch.put_metric_data(
             MetricData=[
                 {
@@ -86,7 +86,6 @@ def lambda_handler(event, context):
         }
 
     except Exception as e:
-        print(f"An unexpected error occurred: {e}")
         return {
             'statusCode': 500,
             'body': f'An unexpected error occurred: {e}'
