@@ -11,9 +11,12 @@ class BraydenStack(Stack):
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
         
+        log_group = logs.LogGroup(self, "WanMONLambdaLogGroup",
+            removal_policy=RemovalPolicy.DESTROY
+        )
         fn = lambda_.Function(self, "WanMONLambda",
             runtime=lambda_.Runtime.PYTHON_3_12,
             handler="WanMONLambda.lambda_handler",    
             code=lambda_.Code.from_asset("./modules"),
-            log_removal_policy=RemovalPolicy.DESTROY
+            log_group=log_group
         )   
