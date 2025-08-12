@@ -4,6 +4,7 @@ from aws_cdk import (
     aws_lambda as lambda_,
     aws_events as events,
     aws_events_targets as targets,
+    aws_iam as iam,
 )
 from constructs import Construct
 import os
@@ -18,6 +19,15 @@ class Week2PracStack(Stack):
             handler="monitor.lambda_handler",
             code=lambda_.Code.from_asset(os.path.join(os.getcwd(), "lambda")),
             timeout=Duration.seconds(10),
+        )
+
+        # allow the function to put custom metrics
+        monitor_fn.add_to_role_policy(
+            iam.PolicyStatement(
+                actions=["cloudwatch:PutMetricData"],
+                resources=["*"],
+                conditions={ "StringEquals": { "cloudwatch:namespace": "NYTMonitor" } }
+            )
         )
 
         # EventBridge rule to run every 5 minutes
