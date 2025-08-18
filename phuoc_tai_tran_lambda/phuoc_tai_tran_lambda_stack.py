@@ -12,21 +12,22 @@ from constructs import Construct
 
 class PhuocTaiTranLambdaStack(Stack):
 
+# https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_lambda/README.html
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
         fn = _lambda.Function( 
         self, "PhuocTaiTranLambda",
         runtime=_lambda.Runtime.PYTHON_3_12,
-        handler="ObtainMetrics_2.handler",
-        code = _lambda.Code.from_asset("lib/lambda-handler"),
+        handler="ObtainMetrics.handler",
+        code = _lambda.Code.from_asset("lib/lambda-handler/Module"),
         )
 
         fn_hello = _lambda.Function(
         self, "PhuocTaiTranHelloLambda",
         runtime=_lambda.Runtime.PYTHON_3_12,
         handler="helloLambda.handler",
-        code=_lambda.Code.from_asset("lib/lambda-handler"),
+        code=_lambda.Code.from_asset("lib/lambda-handler/Module"),
         )
 
         fn_log_group = fn.log_group
@@ -44,7 +45,7 @@ class PhuocTaiTranLambdaStack(Stack):
         # Schedule the Lambda function to run every 15 minutes (can be deleted as cloudwatch event has a trigger already)
         rule = events.Rule(
             self, "ScheduleRule",
-            schedule=events.Schedule.rate(Duration.minutes(15)),
+            schedule=events.Schedule.rate(Duration.minutes(5)),
             targets=[targets.LambdaFunction(fn),
                      targets.LambdaFunction(fn_hello)]
         )
