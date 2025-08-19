@@ -1,8 +1,11 @@
 from aws_cdk import (
-    # Duration,
+    Duration,
     Stack,
     aws_lambda as lambda_,
-    aws_logs as logs, RemovalPolicy
+    aws_logs as logs,
+    aws_events as events,
+    aws_events_targets as targets,
+    RemovalPolicy
 )
 from constructs import Construct
 
@@ -20,3 +23,11 @@ class BraydenStack(Stack):
             code=lambda_.Code.from_asset("./modules"),
             log_group=log_group
         )   
+
+     # Triger lamda every 5 min
+        rule = events.Rule(self, "WanMONLambdaSchedule",
+            schedule=events.Schedule.rate(Duration.minutes(5))
+        )
+
+        # Target the lamdba function for the rule
+        rule.add_target(targets.LambdaFunction(fn))
