@@ -1,0 +1,5 @@
+WEBSITE = "https://www.bom.gov.au/nsw/"
+WAN_MON_AVAILABILITY = "Availability"
+WAN_MON_LATENCY = "Ping"
+WAN_MON_PACKETLOSS = "PacketLoss"
+WAN_MANESPACE = "DevOps_22140027"
