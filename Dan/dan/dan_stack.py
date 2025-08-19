@@ -13,6 +13,7 @@ class DanStack(Stack):
     def __init__(self, scope: Construct, id: str, **kwargs) -> None:
         super().__init__(scope, id, **kwargs)
 
+        # Minimal: Only create Lambda and grant CloudWatch/log permissions
         web_crawler_lambda = _lambda.Function(
             self, "WebCrawlerFunction",
             runtime=_lambda.Runtime.PYTHON_3_9,

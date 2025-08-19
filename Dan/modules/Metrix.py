@@ -9,7 +9,8 @@ def lambda_handler(event, context):
         {"name": "YouTube", "url": "https://www.youtube.com"}
     ]
     http = urllib3.PoolManager()
-    metric_data = []
+    metric_data_avail = []
+    metric_data_lat = []
     for site in websites:
         start_time = time.time()
         try:
@@ -19,7 +20,7 @@ def lambda_handler(event, context):
         except Exception:
             latency = (time.time() - start_time) * 1000
             availability = 0
-        metric_data.append({
+        metric_data_avail.append({
             'MetricName': 'Availability',
             'Dimensions': [
                 {'Name': 'Website', 'Value': site['name']},
@@ -28,7 +29,7 @@ def lambda_handler(event, context):
             'Value': availability,
             'Unit': 'None'
         })
-        metric_data.append({
+        metric_data_lat.append({
             'MetricName': 'Latency',
             'Dimensions': [
                 {'Name': 'Website', 'Value': site['name']},
@@ -42,6 +43,10 @@ def lambda_handler(event, context):
     # Send all metrics in one call (as a list)
     cloudwatch.put_metric_data(
         Namespace='WebsiteMonitoring',
-        MetricData=metric_data
+        MetricData=metric_data_avail
+    )
+    cloudwatch.put_metric_data(
+        Namespace='WebsiteMonitoring',
+        MetricData=metric_data_lat
     )
     return {'statusCode': 200, 'body': 'Metrics published'}
