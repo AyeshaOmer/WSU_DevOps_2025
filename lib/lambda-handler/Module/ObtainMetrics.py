@@ -18,7 +18,7 @@ def handler(event, context):
     # define dimension variable
     dimension = {"Name": "URL", "Value": URL}
 
-    response = publish_metric(URL_NAMESPACE, URL_MONITOR_AVAILABILITY, URL, dimension, avail)
-    response = publish_metric(URL_NAMESPACE, URL_MONITOR_LATENCY, URL, dimension, latency)
+    response = publish_metric.publish_metric(URL_NAMESPACE, URL_MONITOR_AVAILABILITY, dimension, avail)
+    response = publish_metric.publish_metric(URL_NAMESPACE, URL_MONITOR_LATENCY, dimension, latency)
     
     

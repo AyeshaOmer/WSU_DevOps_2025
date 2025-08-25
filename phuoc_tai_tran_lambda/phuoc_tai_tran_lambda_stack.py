@@ -42,7 +42,7 @@ class PhuocTaiTranLambdaStack(Stack):
         rest_api_name="PhuocTaiTranLambdaAPI",
         )
 
-        # Schedule the Lambda function to run every 15 minutes (can be deleted as cloudwatch event has a trigger already)
+        # Schedule the Lambda function to run every 5 minutes (can be deleted as cloudwatch event has a trigger already)
         rule = events.Rule(
             self, "ScheduleRule",
             schedule=events.Schedule.rate(Duration.minutes(5)),
