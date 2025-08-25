@@ -2,19 +2,19 @@ import boto3
 import requests
 import time
 
+#User created files
+import constants
+import push_to_cloudwatch
+
 cloudwatch = boto3.client('cloudwatch')
 
-WEBSITE = "https://www.bom.gov.au/nsw/"
-WAN_MON_AVAILABILITY = "Availability"
-WAN_MON_LATENCY  = "Ping"
-WAN_MON_PACKETLOSS = "PacketLoss"
-WAN_MANESPACE = "DevOps_22140027"
+
 
 def lambda_handler(event, context):
     try:
         # Checks Ping timeing and latency
         start_time = time.time()
-        response = requests.get(WEBSITE, timeout=10) # 10-second timeout
+        response = requests.get(constants.WEBSITE, timeout=10) # 10-second timeout
         end_time = time.time()
         latency_ms = (end_time - start_time) * 1000  
 
