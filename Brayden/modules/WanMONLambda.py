@@ -1,54 +1,48 @@
 import boto3
 import requests
 import time
+import logging
 
-#User created files
+# User created files
 import constants
 import push_to_cloudwatch
 
-cloudwatch = boto3.client('cloudwatch')
-
-
+# Configure logging for better error visibility
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 def lambda_handler(event, context):
     try:
-        # Checks Ping timeing and latency
+        # Check ping timing and latency
         start_time = time.time()
-        response = requests.get(constants.WEBSITE, timeout=10) # 10-second timeout
+        # 10-second timeout for the request to prevent long-running calls
+        response = requests.get(constants.WEBSITE, timeout=10)
         end_time = time.time()
-        latency_ms = (end_time - start_time) * 1000  
+        latency_ms = (end_time - start_time) * 1000
 
-        # availability = 1 for success or 0 for failure
-        # Checks for code 200
+        # Determine availability: 1 for success (status code 200), 0 for failure
         availability_status = 1 if response.status_code == 200 else 0
 
-        # Subbmit to CloudWatch
-
-        #AVAILABILITY metric
-        cloudwatch.put_metric_data(
-            MetricData=[
-                {
-                    'MetricName': WAN_MON_AVAILABILITY,
-                    'Dimensions': [{'Name': 'URL', 'Value': WEBSITE}],
-                    'Value': availability_status,
-                    'Unit': 'None'
-                },
-            ],
-            Namespace=WAN_MANESPACE
+        # Use the reusable push_metric function to send data to CloudWatch
+        # Push the availability metric
+        push_to_cloudwatch.push_metric(
+            namespace=constants.WAN_MANESPACE,
+            metric_name=constants.WAN_MON_AVAILABILITY,
+            value=availability_status,
+            unit='None',
+            dimensions=[{'Name': 'URL', 'Value': constants.WEBSITE}]
         )
 
-        # Publish Latency metric
-        cloudwatch.put_metric_data(
-            MetricData=[
-                {
-                    'MetricName': WAN_MON_LATENCY,
-                    'Dimensions': [{'Name': 'URL', 'Value': WEBSITE}],
-                    'Value': latency_ms,
-                    'Unit': 'Milliseconds'
-                },
-            ],
-            Namespace=WAN_MANESPACE
+        # Push the latency metric
+        push_to_cloudwatch.push_metric(
+            namespace=constants.WAN_MANESPACE,
+            metric_name=constants.WAN_MON_LATENCY,
+            value=latency_ms,
+            unit='Milliseconds',
+            dimensions=[{'Name': 'URL', 'Value': constants.WEBSITE}]
         )
+
+        logger.info(f"Successfully published metrics for {constants.WEBSITE}.")
 
         return {
             'statusCode': 200,
@@ -56,36 +50,35 @@ def lambda_handler(event, context):
         }
 
     except requests.exceptions.RequestException as e:
-        # If the request fails submit a 0
-        cloudwatch.put_metric_data(
-            MetricData=[
-                {
-                    'MetricName': WAN_MON_AVAILABILITY,
-                    'Dimensions': [{'Name': 'URL', 'Value': WEBSITE}],
-                    'Value': 0,
-                    'Unit': 'None'
-                },
-            ],
-            Namespace=WAN_MANESPACE
+        # If the request fails, push a failure metric for both availability and latency
+        logger.error(f"Failed to reach {constants.WEBSITE}: {e}")
+
+        # Push an availability status of 0
+        push_to_cloudwatch.push_metric(
+            namespace=constants.WAN_MANESPACE,
+            metric_name=constants.WAN_MON_AVAILABILITY,
+            value=0,
+            unit='None',
+            dimensions=[{'Name': 'URL', 'Value': constants.WEBSITE}]
         )
-        # if the latency submit a -1
-        cloudwatch.put_metric_data(
-            MetricData=[
-                {
-                    'MetricName': WAN_MON_LATENCY,
-                    'Dimensions': [{'Name': 'URL', 'Value': WEBSITE}],
-                    'Value': -1,
-                    'Unit': 'Milliseconds'
-                },
-            ],
-            Namespace=WAN_MANESPACE
+
+        # Push a latency value of -1 to indicate a failure
+        push_to_cloudwatch.push_metric(
+            namespace=constants.WAN_MANESPACE,
+            metric_name=constants.WAN_MON_LATENCY,
+            value=-1,
+            unit='Milliseconds',
+            dimensions=[{'Name': 'URL', 'Value': constants.WEBSITE}]
         )
+
         return {
             'statusCode': 500,
             'body': f'Failed to monitor website: {e}'
         }
 
     except Exception as e:
+        # Catch-all for any other unexpected errors
+        logger.error(f"An unexpected error occurred: {e}")
         return {
             'statusCode': 500,
             'body': f'An unexpected error occurred: {e}'
