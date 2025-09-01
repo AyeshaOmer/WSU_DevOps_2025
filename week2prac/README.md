@@ -6,6 +6,7 @@ This project uses **AWS CDK (Python)** to deploy a monitoring solution for multi
 - An **EventBridge rule** that runs the Lambda every 5 minutes
 - **Custom CloudWatch metrics** for latency, availability, and status codes
 - A **CloudWatch Dashboard** to visualise website health
+- Monitor multiple websites defined in **`sites.json`**.
 
 
 ---
@@ -53,7 +54,7 @@ cdk deploy
 
 Every 5 minutes, a Lambda function runs that:
 
-- Sends an HTTP GET request to each website in the `sites.json` file
+- Sends an HTTP GET request to each website in the **`sites.json`** file
 - Measures **latency** in milliseconds
 - Records the **HTTP status code** (e.g., `200`, `404`, `500`)
 - Publishes custom CloudWatch metrics:
@@ -61,6 +62,16 @@ Every 5 minutes, a Lambda function runs that:
   - `NYTMonitor/Availability`
   - `NYTMonitor/StatusCode_200`, `StatusCode_500`, etc.
 
+## CloudWatch Dashboard:
+  -  Visualizes the health of each website with widgets for:
+     - **Availability** (whether the site is up or down).
+     - **Latency (p95)** — 95th percentile latency for each website.
+     - **Status Codes** (e.g., HTTP `200`, `500` errors).
+
+## CloudWatch Alarms
+  - Set up alarms for each website:
+     - **Availability Alarm**: Triggers if the site is down (availability < 1).
+     - **Latency Alarm**: Triggers if the latency exceeds the defined threshold (e.g., `2000ms`).
 ---
 
 ## Viewing Results
