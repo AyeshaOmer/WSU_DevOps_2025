@@ -1,48 +1,65 @@
 import urllib3
 import time
+import json
+import os
 import boto3
+
 
 cloudwatch = boto3.client('cloudwatch')
 
+NAMESPACE = os.getenv("METRIC_NAMESPACE", "NYTMonitor")  # Default to "NYTMonitor"
+
+def _put_metrics(site: str, latency_ms: float | None, status_code: int | None, available: int):
+    metric_data = [
+        {
+            "MetricName": "Availability",
+            "Dimensions": [{"Name": "Site", "Value": site}],
+            "Value": available,
+            "Unit": "Count",
+        }
+    ]
+
+    if latency_ms is not None:
+        metric_data.append({
+            "MetricName": "Latency",
+            "Dimensions": [{"Name": "Site", "Value": site}],
+            "Value": latency_ms,
+            "Unit": "Milliseconds",
+        })
+
+    if status_code is not None:
+        metric_data.append({
+            "MetricName": "StatusCode",
+            "Dimensions": [{"Name": "Site", "Value": site}, {"Name": "Code", "Value": str(status_code)}],
+            "Value": 1,
+            "Unit": "Count",
+        })
+
+    cloudwatch.put_metric_data(Namespace=NAMESPACE, MetricData=metric_data)
+
 def lambda_handler(event, context):
-    url = 'https://www.nytimes.com'
+    # Load the list of websites to monitor from sites.json
+    sites_path = os.path.join(os.path.dirname(__file__), "sites.json")
+    with open(sites_path, "r", encoding="utf-8") as f:
+        sites = json.load(f)
+
     http = urllib3.PoolManager()
+    for site in sites:
+        start = time.time()
+        latency_ms = None
+        status_code = None
+        available = 0
 
-    start_time = time.time()
-    try:
-        response = http.request('GET', url)
-        latency = (time.time() - start_time) * 1000 
-        status_code = response.status
+        try:
+            resp = http.request("GET", site, timeout=urllib3.Timeout(connect=3.0, read=10.0), retries=False)
+            latency_ms = (time.time() - start) * 1000.0 
+            status_code = resp.status
+            available = 1 if status_code == 200 else 0
 
-        cloudwatch.put_metric_data(
-            Namespace='NYTMonitor',
-            MetricData=[
-                {
-                    'MetricName': 'Latency',
-                    'Value': latency,
-                    'Unit': 'Milliseconds'
-                },
-                {
-                    'MetricName': 'Availability',
-                    'Value': 1 if status_code == 200 else 0,
-                    'Unit': 'Count'
-                },
-                {
-                    'MetricName': f'StatusCode_{status_code}',
-                    'Value': 1,
-                    'Unit': 'Count'
-                }
-            ]
-        )
-    except Exception as e:
-        cloudwatch.put_metric_data(
-            Namespace='NYTMonitor',
-            MetricData=[
-                {
-                    'MetricName': 'Availability',
-                    'Value': 0,
-                    'Unit': 'Count'
-                }
-            ]
-        )
-        raise e
+        except Exception:
+            available = 0
+
+        # Publish metrics for the site
+        _put_metrics(site, latency_ms, status_code, available)
+
+    return {"ok": True, "sites_checked": len(sites)}
