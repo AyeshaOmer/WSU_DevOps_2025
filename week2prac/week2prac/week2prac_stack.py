@@ -86,3 +86,40 @@ class Week2PracStack(Stack):
 
         dashboard.add_widgets(*[w for row in rows for w in row])
         dashboard.add_widgets(cw.GraphWidget(title="5xx Errors (Sum)", left=[status_5xx], width=24, height=6))
+
+        # ---- CloudWatch Alarms ----
+        # Create CloudWatch alarms for Availability and Latency
+        for site in sites:
+            avail_metric = cw.Metric(
+                namespace=METRIC_NAMESPACE,
+                metric_name="Availability",
+                dimensions_map={"Site": site},
+                statistic="Average",
+                period=Duration.minutes(5),
+            )
+
+            latency_metric = cw.Metric(
+                namespace=METRIC_NAMESPACE,
+                metric_name="Latency",
+                dimensions_map={"Site": site},
+                statistic="p95",
+                period=Duration.minutes(5),
+            )
+
+            # Availability Alarm
+            availability_alarm = cw.Alarm(self, f"AvailabilityAlarm-{site}",
+                metric=avail_metric,
+                threshold=1,  # Availability threshold set to 1 (i.e., if the site is down)
+                evaluation_periods=1,
+                comparison_operator=cw.ComparisonOperator.LESS_THAN_THRESHOLD,
+                alarm_description=f"Alarm if {site} becomes unavailable"
+            )
+
+            # Latency Alarm (e.g., if latency exceeds 2000ms)
+            latency_alarm = cw.Alarm(self, f"LatencyAlarm-{site}",
+                metric=latency_metric,
+                threshold=2000,  # Latency threshold set to 2000ms
+                evaluation_periods=1,
+                comparison_operator=cw.ComparisonOperator.GREATER_THAN_THRESHOLD,
+                alarm_description=f"Alarm if {site} latency is too high"
+            )
