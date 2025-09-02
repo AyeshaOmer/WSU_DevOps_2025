@@ -7,7 +7,7 @@ from aws_cdk import (
     aws_events_targets as targets,
     aws_iam as iam,
     aws_cloudwatch as cloudwatch,
-    Duration
+    Duration,   
 )
 from constructs import Construct
 
@@ -60,6 +60,20 @@ class DanStack(Stack):
             )
         )
 
+        dashboard = cloudwatch.Dashboard(self, "Dash",
+            default_interval=Duration.days(7),
+            dashboard_name="WebTestDashboard",
+            variables=[cloudwatch.DashboardVariable(
+                id="region2",
+                type=cloudwatch.VariableType.PATTERN,
+                label="Sydney",
+                input_type=cloudwatch.VariableInputType.INPUT,
+                value="ap-southeast-2",
+                default_value=cloudwatch.DefaultValue.value("ap-southeast-2"),
+                visible=True
+            )]
+        )
+
         
         for site in websites:
             # Add metrix for website and alarm
@@ -84,11 +98,23 @@ class DanStack(Stack):
                 statistic="avg",
                 period=Duration.minutes(5)
             )
-            # Add alarm for each metrix
+            # This is alarm for Latency
+            # Latency "not equal to expected" is implemented as two alarms:
+            # one for latency > expected and one for latency < expected.
             cloudwatch.Alarm(
                 self, f"{site['name']}LatencyAlarm",
                 metric=latency_metrix,
                 threshold=THRESHOLD_METRICS["latency"],
+                evaluation_periods=1,
+                comparison_operator=cloudwatch.ComparisonOperator.GREATER_THAN_THRESHOLD
+            )
+            # These are alarms for availability.
+            # Availability "not equal to expected" is implemented as two alarms:
+            # one for availability > expected and one for availability < expected.
+            cloudwatch.Alarm(
+                self, f"{site['name']}AvailabilityHighAlarm",
+                metric=availability_metrix,
+                threshold=THRESHOLD_METRICS["availability"],
                 evaluation_periods=1,
                 comparison_operator=cloudwatch.ComparisonOperator.GREATER_THAN_THRESHOLD
             )
@@ -99,6 +125,7 @@ class DanStack(Stack):
                 evaluation_periods=1,
                 comparison_operator=cloudwatch.ComparisonOperator.LESS_THAN_THRESHOLD
             )
+            # These are alarms for status code.
             # Status code "not equal to expected" is implemented as two alarms:
             # one for status > expected and one for status < expected.
             cloudwatch.Alarm(
@@ -115,3 +142,16 @@ class DanStack(Stack):
                 evaluation_periods=1,
                 comparison_operator=cloudwatch.ComparisonOperator.LESS_THAN_THRESHOLD
             )
+            # This for cloudwatch dashboard
+            # Add a graph widget for each site's metrics
+            dashboard.add_widgets(
+                cloudwatch.GraphWidget(
+                    title=f"{site['name']} Metrics",
+                    left=[latency_metrix],
+                    right=[availability_metrix, status_code_metrix],
+                    width=12,
+                    height=6
+                )
+            )
+
+        

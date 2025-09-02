@@ -43,7 +43,7 @@ def lambda_handler(event, context):
             'Unit': 'Milliseconds'
         })
         metric_data_lat.append({
-            'MetricName': 'Code',
+            'MetricName': 'StatusCode',
             'Dimensions': [
                 {'Name': 'Website', 'Value': site['name']},
                 {'Name': 'URL', 'Value': site['url']}
@@ -55,15 +55,15 @@ def lambda_handler(event, context):
     cloudwatch = boto3.client('cloudwatch')
     # Send all metrics in one call (as a list)
     cloudwatch.put_metric_data(
-        Namespace='WebsiteMonitoring',
+        Namespace='WebTest',
         MetricData=metric_data_avail
     )
     cloudwatch.put_metric_data(
-        Namespace='WebsiteMonitoring',
+        Namespace='WebTest',
         MetricData=metric_data_lat
     )
     cloudwatch.put_metric_data(
-        Namespace='WebsiteMonitoring',
+        Namespace='WebTest',
         MetricData=metric_data_code
     )
     return {'statusCode': 200, 'body': 'Metrics published'}
