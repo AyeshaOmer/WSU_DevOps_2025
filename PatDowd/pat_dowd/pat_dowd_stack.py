@@ -42,7 +42,7 @@ class PatDowdStack(Stack):
             )
         )
 
-        #dashboard
+        # create dashboard
         dashboard = cw.Dashboard(self, "Dash",
             default_interval=Duration.days(7),
             variables=[cw.DashboardVariable(
@@ -55,9 +55,9 @@ class PatDowdStack(Stack):
                 visible=True
             )]
         )
-
         # create widgets
         for url in ["www.google.com", "www.youtube.com", "www.coolmathgames.com"]:
+
             availability_metric = cw.Metric(
                 namespace="WebHelperDashboard",
                 metric_name="Availability",
@@ -81,11 +81,50 @@ class PatDowdStack(Stack):
                 statistic="Average",
                 period=Duration.minutes(1)
             )
-        dashboard.add_widgets(
-            cw.GraphWidget(
-                title=f"{url} Health",
-                left=[availability_metric, latency_metric, size_metric]
+            # Create alarms
+            # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_cloudwatch/Alarm.html
+            availability_alarm = cw.Alarm(
+                self,
+                f"{url} Availability Alarm",
+                metric=availability_metric,
+                comparison_operator=cw.ComparisonOperator.LESS_THAN_OR_EQUAL_TO_THRESHOLD,
+                threshold=0,
+                evaluation_periods=1,
+                
             )
-        )
+            latency_alarm = cw.Alarm(
+                self,
+                f"{url} Latency Alarm",
+                metric=latency_metric,
+                comparison_operator=cw.ComparisonOperator.GREATER_THAN_THRESHOLD,
+                threshold=1,
+                evaluation_periods=1,
+            )
+            size_alarm = cw.Alarm(
+                self,
+                f"{url} Size Alarm",
+                metric=size_metric,
+                comparison_operator=cw.ComparisonOperator.LESS_THAN_THRESHOLD,
+                threshold=1,
+                evaluation_periods=1,
+            )
+
+            widget_array = []
+            widget_array.append(cw.AlarmWidget(
+                title=f"{url} Availability",
+                alarm=availability_alarm
+            ))
+
+            widget_array.append(cw.AlarmWidget(
+                title=f"{url} Latency",
+                alarm=latency_alarm
+            ))
+
+            widget_array.append(cw.AlarmWidget(
+                title=f"{url} Size",
+                alarm=size_alarm
+            ))
+        
+            dashboard.add_widgets(*widget_array)
 
 

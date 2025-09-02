@@ -8,7 +8,7 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 http = urllib3.PoolManager()
 
-URLS=["www.google.com", "www.youtube.com", "www.coolmathgames.com"]
+URLS=["www.google.com", "www.youtube.com", "www.coolmathgames.com", "www.example.com"]
 url_latency = []
 url_avail = []
 url_size=[]
@@ -31,7 +31,7 @@ def lambda_handler(event, context):
         else:
             url_avail.append(0)
         url_latency.append(endTime - startTime)
-        url_size.append(len(httpResponse.data))
+        url_size.append(len(httpResponse.data)/100000)
         
         #data being published
         publish_metric.publish(URL_NAMESPACE, URL_MONITOR_AVAILABILITY, URLS[i], url_avail[i])
