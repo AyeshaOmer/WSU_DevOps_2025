@@ -1,6 +1,7 @@
 import boto3
 import time
 import urllib3
+import logging
 
 def lambda_handler(event, context):
     websites = [
@@ -24,6 +25,7 @@ def lambda_handler(event, context):
         except Exception:
             latency = (time.time() - start_time) * 1000
             availability = 0
+            code = 0
         metric_data_avail.append({
             'MetricName': 'Availability',
             'Dimensions': [
@@ -42,28 +44,27 @@ def lambda_handler(event, context):
             'Value': latency,
             'Unit': 'Milliseconds'
         })
-        metric_data_lat.append({
+        metric_data_code.append({
             'MetricName': 'StatusCode',
             'Dimensions': [
                 {'Name': 'Website', 'Value': site['name']},
                 {'Name': 'URL', 'Value': site['url']}
             ],
             'Value': code,
-            'Unit': 'Code'
+            'Unit': 'None'
         })
         
     cloudwatch = boto3.client('cloudwatch')
-    # Send all metrics in one call (as a list)
-    cloudwatch.put_metric_data(
-        Namespace='WebTest',
-        MetricData=metric_data_avail
-    )
-    cloudwatch.put_metric_data(
-        Namespace='WebTest',
-        MetricData=metric_data_lat
-    )
-    cloudwatch.put_metric_data(
-        Namespace='WebTest',
-        MetricData=metric_data_code
-    )
+    # Combine all metric data into a single call
+    metric_data_all = metric_data_avail + metric_data_lat + metric_data_code
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO)
+    try:
+        response = cloudwatch.put_metric_data(
+            Namespace='WebTest',
+            MetricData=metric_data_all
+        )
+        logger.info('put_metric_data response: %s', response)
+    except Exception as e:
+        logger.exception('Failed to publish metrics: %s', e)
     return {'statusCode': 200, 'body': 'Metrics published'}

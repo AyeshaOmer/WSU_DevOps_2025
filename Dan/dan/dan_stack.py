@@ -37,7 +37,7 @@ class DanStack(Stack):
             self, "WebCrawlerFunction",
             runtime=_lambda.Runtime.PYTHON_3_9,
             handler="Metrix.lambda_handler",
-            code=_lambda.Code.from_asset("modules"),
+            code=_lambda.Code.from_asset("./modules"),
             timeout=Duration.minutes(5),
             memory_size=256
         )
@@ -80,21 +80,21 @@ class DanStack(Stack):
             latency_metrix = cloudwatch.Metric(
                 namespace="WebTest",
                 metric_name="Latency",
-                dimensions_map={"Website": site["name"]},
+                dimensions_map={"Website": site["name"], "URL": site["url"]},
                 statistic="avg",
                 period=Duration.minutes(5)
             )
             availability_metrix = cloudwatch.Metric(
                 namespace="WebTest",
                 metric_name="Availability",
-                dimensions_map={"Website": site["name"]},
+                dimensions_map={"Website": site["name"], "URL": site["url"]},
                 statistic="avg",
                 period=Duration.minutes(5)
             )
             status_code_metrix = cloudwatch.Metric(
                 namespace="WebTest",
                 metric_name="StatusCode",
-                dimensions_map={"Website": site["name"]},
+                dimensions_map={"Website": site["name"], "URL": site["url"]},
                 statistic="avg",
                 period=Duration.minutes(5)
             )
@@ -111,13 +111,6 @@ class DanStack(Stack):
             # These are alarms for availability.
             # Availability "not equal to expected" is implemented as two alarms:
             # one for availability > expected and one for availability < expected.
-            cloudwatch.Alarm(
-                self, f"{site['name']}AvailabilityHighAlarm",
-                metric=availability_metrix,
-                threshold=THRESHOLD_METRICS["availability"],
-                evaluation_periods=1,
-                comparison_operator=cloudwatch.ComparisonOperator.GREATER_THAN_THRESHOLD
-            )
             cloudwatch.Alarm(
                 self, f"{site['name']}AvailabilityAlarm",
                 metric=availability_metrix,
