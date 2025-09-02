@@ -16,16 +16,16 @@ class Week2PracStack(Stack):
         super().__init__(scope, id, **kwargs)
 
         # Define the namespace for CloudWatch metrics
-        METRIC_NAMESPACE = "NYTMonitor"  # You can change this to a custom namespace if needed
+        METRIC_NAMESPACE = "NYTMonitor"  
 
         # Lambda function
         monitor_fn = lambda_.Function(self, "MonitorNYT",
             runtime=lambda_.Runtime.PYTHON_3_12,
             handler="monitor.lambda_handler",
             code=lambda_.Code.from_asset(os.path.join(os.getcwd(), "lambda")),
-            timeout=Duration.seconds(30),  # Increased timeout to allow enough time for site crawling
+            timeout=Duration.seconds(30), 
             environment={
-                "METRIC_NAMESPACE": METRIC_NAMESPACE  # Pass the namespace to Lambda via environment variable
+                "METRIC_NAMESPACE": METRIC_NAMESPACE  
             }
         )
 
@@ -33,8 +33,8 @@ class Week2PracStack(Stack):
         monitor_fn.add_to_role_policy(
             iam.PolicyStatement(
                 actions=["cloudwatch:PutMetricData"],
-                resources=["*"],  # Allow all resources; you could specify resources if needed
-                conditions={"StringEquals": {"cloudwatch:namespace": METRIC_NAMESPACE}}  # Restrict access to the specified namespace
+                resources=["*"], 
+                conditions={"StringEquals": {"cloudwatch:namespace": METRIC_NAMESPACE}}  
             )
         )
 
@@ -79,7 +79,7 @@ class Week2PracStack(Stack):
         status_5xx = cw.Metric(
             namespace=METRIC_NAMESPACE,
             metric_name="StatusCode",
-            dimensions_map={"Code": "500"},  # no Site dimension → totals across all sites
+            dimensions_map={"Code": "500"},  
             statistic="Sum",
             period=Duration.minutes(5),
         )
@@ -109,7 +109,7 @@ class Week2PracStack(Stack):
             # Availability Alarm
             availability_alarm = cw.Alarm(self, f"AvailabilityAlarm-{site}",
                 metric=avail_metric,
-                threshold=1,  # Availability threshold set to 1 (i.e., if the site is down)
+                threshold=1, 
                 evaluation_periods=1,
                 comparison_operator=cw.ComparisonOperator.LESS_THAN_THRESHOLD,
                 alarm_description=f"Alarm if {site} becomes unavailable"
@@ -118,7 +118,7 @@ class Week2PracStack(Stack):
             # Latency Alarm (e.g., if latency exceeds 2000ms)
             latency_alarm = cw.Alarm(self, f"LatencyAlarm-{site}",
                 metric=latency_metric,
-                threshold=2000,  # Latency threshold set to 2000ms
+                threshold=2000, 
                 evaluation_periods=1,
                 comparison_operator=cw.ComparisonOperator.GREATER_THAN_THRESHOLD,
                 alarm_description=f"Alarm if {site} latency is too high"
