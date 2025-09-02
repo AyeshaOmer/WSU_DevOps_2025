@@ -13,8 +13,17 @@ from aws_cdk import (
     aws_cloudwatch as cw,   
     aws_iam as iam
 )
+
+from constantSource import(
+    URL_MONITOR_AVAILABILITY,
+    URL_MONITOR_LATENCY,
+    URL_NAMESPACE,
+    URLS 
+)
+
 import aws_cdk as cdk
 import aws_cdk.aws_cloudwatch_actions as cw_actions
+
 
 from constructs import Construct
 
@@ -41,7 +50,7 @@ class PhuocTaiTranLambdaStack(Stack):
         runtime=_lambda.Runtime.PYTHON_3_12,
         handler="ObtainMetrics.handler",
         code=_lambda.Code.from_asset("lib/lambda-handler/Module"),
-        role=lambda_role  # <-- assign the role here
+        role=lambda_role  # <-- assign the role here (policy above)
         )
 
         fn_hello = _lambda.Function(
@@ -49,21 +58,17 @@ class PhuocTaiTranLambdaStack(Stack):
         runtime=_lambda.Runtime.PYTHON_3_12,
         handler="helloLambda.handler",
         code=_lambda.Code.from_asset("lib/lambda-handler/Module"),
-        role=lambda_role  # <-- assign the role here
+        role=lambda_role  # <-- assign the role here (policy above)
         )
 
-        fn_log_group = fn.log_group
-        fn_log_group.apply_removal_policy(RemovalPolicy.DESTROY)
         
-        fn_log_group_2 = fn_hello.log_group
-        fn_log_group_2.apply_removal_policy(RemovalPolicy.DESTROY)
 
         endpoint = apigw.LambdaRestApi(
         self, "ApiGwEndpoint",
         handler=fn,
         rest_api_name="PhuocTaiTranLambdaAPI",
         )
-
+        # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_scheduler/README.html
         # Schedule the Lambda function to run every 5 minutes (can be deleted as cloudwatch event has a trigger already)
         rule = events.Rule(
             self, "ScheduleRule",
@@ -92,18 +97,13 @@ class PhuocTaiTranLambdaStack(Stack):
         ]
         )
 
-        # Define URLs and metric names
-        URLS = ['www.skipq.org', 'www.bbc.com', 'www.truckersmp.com']
-        URL_NAMESPACE = "PhuocTaiTranProject_WSU2025"
-        URL_MONITOR_AVAILABILITY = "Availability"
-        URL_MONITOR_LATENCY = "Latency"
         # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_cloudwatch/Dashboard.html
         # Create CloudWatch dashboard
         dashboard = cw.Dashboard(self, "PhuocTaiTranDashboard",
             dashboard_name="PhuocTaiTranDashboard"
         )
 
-        # Add widgets for each URL
+        # Use imported URLS for dashboard and alarms
         for url in URLS:
             availability_metric = cw.Metric(
                 namespace=URL_NAMESPACE,
@@ -157,3 +157,10 @@ class PhuocTaiTranLambdaStack(Stack):
             # Optionally, add alarm actions (e.g., SNS notification)
             availability_alarm.add_alarm_action(cw_actions.SnsAction(topic))
             latency_alarm.add_alarm_action(cw_actions.SnsAction(topic))
+
+
+        fn_log_group = fn.log_group
+        fn_log_group.apply_removal_policy(RemovalPolicy.DESTROY)
+        
+        fn_log_group_2 = fn_hello.log_group
+        fn_log_group_2.apply_removal_policy(RemovalPolicy.DESTROY)

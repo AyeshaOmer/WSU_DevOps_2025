@@ -56,3 +56,32 @@ command.
  * `cdk docs`        open CDK documentation
 
 Enjoy!
+
+**Reference**
+lambda construction library: https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_lambda/README.html
+Scheduler Construct Library: https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_scheduler/README.html
+
+
+**Changelog**
+Sunday 3 Aug:
+    - Create the lambda function in phuoc_tai_tran_lambda_stack.py to handle ObtainMetric.py
+    - Create ObtainMetrics.py to collect 3 metrics from 3 websites 
+    - Create the removal policy for the lambda function
+    - Create schedule to trigger lambda function every 5 minutes
+
+Monday 11 Aug:
+    - Create publish_metric.py to publish data to AWS cloudwatch
+
+Tuesday 26 Aug:
+    - Create iam policy to access the service-role/AWSLambdaBasicExecutionRole, 
+                                      service-role/AWSLambdaVPCAccessExecutionRole,
+                                      AmazonDynamoDBFullAccess,
+                                      AmazonSNSFullAccess,
+                                      CloudWatchFullAccess
+    - Create dashboard widget in stack.py
+    - Create alarm for availability and latency
+    - Progress to trigger SNS 
+    - Progress to send notification to SNS subscription email
+    - Create DBlambda.py to insert alarm notification into dynamoDB
+    - Place the remove policy at the end of the code - done
+    - Create a constrant globally URLs - done
