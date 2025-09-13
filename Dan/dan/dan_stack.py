@@ -7,8 +7,12 @@ from aws_cdk import (
     aws_events_targets as targets,
     aws_iam as iam,
     aws_cloudwatch as cloudwatch,
-    Duration,   
+    Duration,
+    aws_sns as sns,
+    aws_sns_subscriptions as subs,
+    aws_cloudwatch_actions as cw_actions,
 )
+from aws_cdk import aws_dynamodb as dynamodb, RemovalPolicy
 from constructs import Construct
 
 websites = [
@@ -60,6 +64,7 @@ class DanStack(Stack):
             )
         )
 
+        # Creating the CloudWatch dashboard
         dashboard = cloudwatch.Dashboard(self, "Dash",
             default_interval=Duration.days(7),
             dashboard_name="WebTestDashboard",
@@ -74,7 +79,36 @@ class DanStack(Stack):
             )]
         )
 
-        
+        # Creating topics and subscriptions
+        topic = sns.Topic(self, "WebTestTopic")
+        topic.add_subscription(subs.EmailSubscription("long.nm187254@gmail.com"))
+
+        # Create a DynamoDB table to store alarms
+        alarm_table = dynamodb.Table(
+            self, "AlarmTable",
+            partition_key=dynamodb.Attribute(name="AlarmId", type=dynamodb.AttributeType.STRING),
+            removal_policy=RemovalPolicy.DESTROY
+        )
+
+        # Create a Lambda function to handle SNS alarm notifications and write to DynamoDB
+        alarm_handler = _lambda.Function(
+            self, "AlarmHandler",
+            runtime=_lambda.Runtime.PYTHON_3_9,
+            handler="alarm_handler.lambda_handler",
+            code=_lambda.Code.from_asset("./modules"),
+            timeout=Duration.minutes(1),
+            memory_size=128,
+            environment={
+                'ALARM_TABLE_NAME': alarm_table.table_name
+            }
+        )
+
+        # Subscribe the Lambda to the SNS topic
+        topic.add_subscription(subs.LambdaSubscription(alarm_handler))
+
+        # Grant the Lambda write permissions to the DynamoDB table
+        alarm_table.grant_write_data(alarm_handler)
+
         for site in websites:
             # Add metrix for website and alarm
             latency_metrix = cloudwatch.Metric(
@@ -107,7 +141,7 @@ class DanStack(Stack):
                 threshold=THRESHOLD_METRICS["latency"],
                 evaluation_periods=1,
                 comparison_operator=cloudwatch.ComparisonOperator.GREATER_THAN_THRESHOLD
-            )
+            ).add_alarm_action(cw_actions.SnsAction(topic))
             # These are alarms for availability.
             # Availability "not equal to expected" is implemented as two alarms:
             # one for availability > expected and one for availability < expected.
@@ -117,7 +151,7 @@ class DanStack(Stack):
                 threshold=THRESHOLD_METRICS["availability"],
                 evaluation_periods=1,
                 comparison_operator=cloudwatch.ComparisonOperator.LESS_THAN_THRESHOLD
-            )
+            ).add_alarm_action(cw_actions.SnsAction(topic))
             # These are alarms for status code.
             # Status code "not equal to expected" is implemented as two alarms:
             # one for status > expected and one for status < expected.
@@ -127,14 +161,14 @@ class DanStack(Stack):
                 threshold=THRESHOLD_METRICS["status_code"],
                 evaluation_periods=1,
                 comparison_operator=cloudwatch.ComparisonOperator.GREATER_THAN_THRESHOLD
-            )
+            ).add_alarm_action(cw_actions.SnsAction(topic))
             cloudwatch.Alarm(
                 self, f"{site['name']}StatusCodeLowAlarm",
                 metric=status_code_metrix,
                 threshold=THRESHOLD_METRICS["status_code"],
                 evaluation_periods=1,
                 comparison_operator=cloudwatch.ComparisonOperator.LESS_THAN_THRESHOLD
-            )
+            ).add_alarm_action(cw_actions.SnsAction(topic))
             # This for cloudwatch dashboard
             # Add a graph widget for each site's metrics
             dashboard.add_widgets(
@@ -146,5 +180,5 @@ class DanStack(Stack):
                     height=6
                 )
             )
-
-        
+            # Add alarm actions to notify via SNS topic
+            
