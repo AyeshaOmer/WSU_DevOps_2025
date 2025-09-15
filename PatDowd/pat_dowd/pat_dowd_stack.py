@@ -1,6 +1,7 @@
 from aws_cdk import (
     Stack,
     Duration,
+    RemovalPolicy,
     aws_events as events,
     aws_events_targets as targets,
     aws_iam,
@@ -10,6 +11,7 @@ from aws_cdk import (
     aws_iam as iam,
     aws_sns as sns,
     aws_sns_subscriptions as sns_subs,
+    aws_dynamodb as dynamodb,
 )
 from constructs import Construct
 
@@ -43,6 +45,38 @@ class PatDowdStack(Stack):
         )
 
         # create dashboard
+        # Create DynamoDB table for alarm logging
+        alarm_table = dynamodb.Table(
+            self,
+            "AlarmLogsTable",
+            partition_key=dynamodb.Attribute(
+                name="id",
+                type=dynamodb.AttributeType.STRING
+            ),
+            sort_key=dynamodb.Attribute(
+                name="timestamp",
+                type=dynamodb.AttributeType.STRING
+            ),
+            billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST,
+            removal_policy=RemovalPolicy.DESTROY  # For development; change to RETAIN for production
+        )
+
+        # Create Lambda function for logging alarms to DynamoDB
+        alarm_logger = _lambda.Function(
+            self,
+            "AlarmLoggerFunction",
+            runtime=_lambda.Runtime.PYTHON_3_13,
+            handler="alarm_logger.lambda_handler",
+            code=_lambda.Code.from_asset("modules"),
+            timeout=Duration.seconds(30),
+            environment={
+                "TABLE_NAME": alarm_table.table_name
+            }
+        )
+
+        # Grant DynamoDB permissions to the Lambda function
+        alarm_table.grant_write_data(alarm_logger)
+
         dashboard = cw.Dashboard(self, "Dash",
             default_interval=Duration.days(7),
             variables=[cw.DashboardVariable(
@@ -90,7 +124,12 @@ class PatDowdStack(Stack):
 
             # Add email subscription to the topic
             alarm_topic.add_subscription(
-                sns_subs.EmailSubscription("patdowd07@gmail.com")  # Replace with your email
+                sns_subs.EmailSubscription("patdowd07@gmail.com")
+            )
+            
+            # Add Lambda subscription to log alarms in DynamoDB
+            alarm_topic.add_subscription(
+                sns_subs.LambdaSubscription(alarm_logger)
             )
 
             # Create alarms
