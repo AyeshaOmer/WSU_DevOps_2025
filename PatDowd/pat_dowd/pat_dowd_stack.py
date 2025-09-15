@@ -12,6 +12,7 @@ from aws_cdk import (
     aws_sns as sns,
     aws_sns_subscriptions as sns_subs,
     aws_dynamodb as dynamodb,
+    aws_cloudwatch_actions as actions,
 )
 from constructs import Construct
 
@@ -113,13 +114,14 @@ class PatDowdStack(Stack):
                 metric_name="ResponseSize",
                 dimensions_map={"URL": url},
                 statistic="Average",
-                period=Duration.minutes(1)
+                period=Duration.minutes(1),
+
             )
             # Create SNS Topic for alarms
             alarm_topic = sns.Topic(
                 self,
                 f"{url}-alarm-topic",
-                display_name=f"Web Health Alarms for {url}"
+                display_name=f"Web Health Alarms for {url}",
             )
 
             # Add email subscription to the topic
@@ -143,7 +145,7 @@ class PatDowdStack(Stack):
                 evaluation_periods=1,
 
             )
-            availability_alarm.add_alarm_action(cw.AlarmAction(alarm_topic))
+            availability_alarm.add_alarm_action(actions.SnsAction(alarm_topic))
 
             latency_alarm = cw.Alarm(
                 self,
@@ -151,9 +153,11 @@ class PatDowdStack(Stack):
                 metric=latency_metric,
                 comparison_operator=cw.ComparisonOperator.GREATER_THAN_THRESHOLD,
                 threshold=1,
+                evaluation_periods=1,
+
 
             )
-            latency_alarm.add_alarm_action(cw.AlarmAction(alarm_topic))
+            latency_alarm.add_alarm_action(actions.SnsAction(alarm_topic))
             
             size_alarm = cw.Alarm(
                 self,
@@ -161,8 +165,9 @@ class PatDowdStack(Stack):
                 metric=size_metric,
                 comparison_operator=cw.ComparisonOperator.LESS_THAN_THRESHOLD,
                 threshold=1,
+                evaluation_periods=1,
             )
-            size_alarm.add_alarm_action(cw.AlarmAction(alarm_topic))
+            size_alarm.add_alarm_action(actions.SnsAction(alarm_topic))
 
 
             widget_array = []

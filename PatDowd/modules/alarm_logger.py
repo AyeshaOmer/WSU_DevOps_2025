@@ -5,7 +5,7 @@ import uuid
 from datetime import datetime
 
 dynamodb = boto3.resource('dynamodb')
-table = dynamodb.Table(os.environ['TABLE_NAME'])
+table = dynamodb.Table("alarm_table")
 
 def lambda_handler(event, context):
     """
@@ -17,7 +17,7 @@ def lambda_handler(event, context):
         
         # Create a unique ID for the alarm entry
         alarm_id = str(uuid.uuid4())
-        timestamp = datetime.utcnow().isoformat()
+        timestamp = datetime.now()
         
         # Prepare the alarm data
         alarm_data = {
