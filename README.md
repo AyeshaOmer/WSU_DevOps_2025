@@ -61,6 +61,34 @@ Enjoy!
 lambda construction library: https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_lambda/README.html
 Scheduler Construct Library: https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_scheduler/README.html
 
+File function:
+- phuoc_tai_tran_lambda_stack.py:
+    - IAM Role
+    - Lambda Functions
+    - API Gateway
+    - EventBridge Rule (Scheduler)
+    - SNS Topic & Subscription
+    - DynamoDB Table
+    - CloudWatch Dashboard & Widgets
+    - CloudWatch Alarms
+
+- constantSource.py:
+    - global source of URL and definition
+
+- DBLambda.py: 
+    - stores website downtime information in a DynamoDB table
+
+- ObtainMetrics.py
+    - test the availability and latency of each URLs 
+    - publish these values to Cloudwatch
+
+- publish_metric.py:
+    - using boto3 to publish custom metrics to cloudwatch
+    - Been imported to ObtainMetrics.py
+
+- dashBoard.py:
+    - creates custom cloudwatch dashboard using CDK
+
 
 **Changelog**
 Sunday 3 Aug:
