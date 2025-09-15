@@ -8,8 +8,8 @@ from aws_cdk import (
     aws_lambda as _lambda,
     aws_cloudwatch as cw,
     aws_iam as iam,
-
-
+    aws_sns as sns,
+    aws_sns_subscriptions as sns_subs,
 )
 from constructs import Construct
 
@@ -81,6 +81,18 @@ class PatDowdStack(Stack):
                 statistic="Average",
                 period=Duration.minutes(1)
             )
+            # Create SNS Topic for alarms
+            alarm_topic = sns.Topic(
+                self,
+                f"{url}-alarm-topic",
+                display_name=f"Web Health Alarms for {url}"
+            )
+
+            # Add email subscription to the topic
+            alarm_topic.add_subscription(
+                sns_subs.EmailSubscription("patdowd07@gmail.com")  # Replace with your email
+            )
+
             # Create alarms
             # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_cloudwatch/Alarm.html
             availability_alarm = cw.Alarm(
@@ -90,24 +102,29 @@ class PatDowdStack(Stack):
                 comparison_operator=cw.ComparisonOperator.LESS_THAN_OR_EQUAL_TO_THRESHOLD,
                 threshold=0,
                 evaluation_periods=1,
-                
+
             )
+            availability_alarm.add_alarm_action(cw.AlarmAction(alarm_topic))
+
             latency_alarm = cw.Alarm(
                 self,
                 f"{url} Latency Alarm",
                 metric=latency_metric,
                 comparison_operator=cw.ComparisonOperator.GREATER_THAN_THRESHOLD,
                 threshold=1,
-                evaluation_periods=1,
+
             )
+            latency_alarm.add_alarm_action(cw.AlarmAction(alarm_topic))
+            
             size_alarm = cw.Alarm(
                 self,
                 f"{url} Size Alarm",
                 metric=size_metric,
                 comparison_operator=cw.ComparisonOperator.LESS_THAN_THRESHOLD,
                 threshold=1,
-                evaluation_periods=1,
             )
+            size_alarm.add_alarm_action(cw.AlarmAction(alarm_topic))
+
 
             widget_array = []
             widget_array.append(cw.AlarmWidget(
