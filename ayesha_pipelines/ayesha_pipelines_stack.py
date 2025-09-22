@@ -1,7 +1,5 @@
 from aws_cdk import (
-    # Duration,
     Stack,
-    # aws_sqs as sqs,
 )
 from constructs import Construct
 
@@ -17,3 +15,10 @@ class AyeshaPipelinesStack(Stack):
         #     self, "AyeshaPipelinesQueue",
         #     visibility_timeout=Duration.seconds(300),
         # )
+        source= pipeline_.CodePipelineSource.git_hub("abdulhaseebskipq/Pegasus_Python","main",
+                                                 authentication= SecretValue.secrets_manager('git_token'),
+                                                 trigger=actions_.GitHubTrigger('POLL'))
+        # synth=pipeline_.ShellStep("CodeBuild",input=source,
+        #                       commands=['cd haseeb2022skipq/Sprint3/','pip install -r requirements.txt', 'npm install -g aws-cdk',
+        #                                 'cdk synth'],
+        #                       primary_output_directory="haseeb2022skipq/Sprint3/cdk.out")
