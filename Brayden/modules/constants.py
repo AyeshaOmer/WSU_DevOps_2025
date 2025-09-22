@@ -1,5 +1,10 @@
-WEBSITE = "https://www.bom.gov.au/nsw/"
+# The URL of the website to monitor.
+WEBSITE = "https://www.google.com"
+
+# CloudWatch namespace for the metrics.
+WAN_NAMESPACE = "WebsiteMonitor"
+
+# Metric names for CloudWatch.
 WAN_MON_AVAILABILITY = "Availability"
-WAN_MON_LATENCY = "Ping"
-WAN_MON_PACKETLOSS = "PacketLoss"
-WAN_MANESPACE = "DevOps_22140027"
+WAN_MON_LATENCY = "Latency"
+WAN_MON_SSL_EXPIRY_DAYS = "SSLCertificateExpiryDays"

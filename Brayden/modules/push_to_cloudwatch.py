@@ -1,13 +1,10 @@
 import boto3
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime
 import ssl
 import socket
 
-#User created files
-import constants
-
-# Pyhton error handleing 
+# Configure logging for better error visibility
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -35,8 +32,7 @@ def push_metric(
         dimensions = []
 
     # Construct the metric data payload.
-    # The Timestamp is automatically handled by CloudWatch if not provided,
-    # but explicitly including it can be useful for debugging.
+    Namespace = namespace,
     metric_data = [
         {
             'MetricName': metric_name,
@@ -60,14 +56,6 @@ def push_metric(
         return False
 
 def check_ssl_expiration_and_push_metric(website: str, namespace: str) -> bool:
-    # Define thresholds for the metric value
-    # 0 = OK (more than 15 days)
-    # 15 = WARNING (5-15 days remaining)
-    # 5 = CRITICAL (less than 5 days remaining)
-    CRITICAL_THRESHOLD = 5
-    WARNING_THRESHOLD = 15
-    SSL_EXPIRY_METRIC = "SSLCertificateExpiry"
-
     # If the client failed to initialize, we cannot proceed.
     if cloudwatch_client is None:
         logger.error("CloudWatch client is not available. Cannot check SSL expiry.")
@@ -90,31 +78,24 @@ def check_ssl_expiration_and_push_metric(website: str, namespace: str) -> bool:
         # Calculate remaining days until expiration
         remaining_days = (expiry_date - datetime.utcnow()).days
 
-        # Determine the metric value based on remaining days
-        metric_value = 0
-        if remaining_days < CRITICAL_THRESHOLD:
-            metric_value = CRITICAL_THRESHOLD
-        elif remaining_days < WARNING_THRESHOLD:
-            metric_value = WARNING_THRESHOLD
-
-        # Push the metric to CloudWatch
-        logger.info(f"SSL certificate for {hostname} expires in {remaining_days} days. Pushing metric with value: {metric_value}")
+        # Push the remaining days to CloudWatch
+        logger.info(f"SSL certificate for {hostname} expires in {remaining_days} days. Pushing metric.")
         return push_metric(
             namespace=namespace,
-            metric_name=SSL_EXPIRY_METRIC,
-            value=metric_value,
-            unit='None',
+            metric_name="SSLCertificateExpiryDays",
+            value=remaining_days,
+            unit='Days',
             dimensions=[{'Name': 'URL', 'Value': hostname}]
         )
 
     except Exception as e:
         logger.error(f"Failed to check SSL certificate for {hostname}: {e}")
-        # Push a critical metric value to indicate a failure
+        # Push a failure metric value to indicate a failure
         return push_metric(
             namespace=namespace,
-            metric_name=SSL_EXPIRY_METRIC,
-            value=CRITICAL_THRESHOLD,
-            unit='None',
+            metric_name="SSLCertificateExpiryDays",
+            value=-1,
+            unit='Days',
             dimensions=[{'Name': 'URL', 'Value': hostname}]
         )
 

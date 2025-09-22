@@ -1,5 +1,5 @@
 import boto3
-import requests
+import urllib3
 import time
 import logging
 
@@ -11,22 +11,29 @@ import push_to_cloudwatch
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
+http = urllib3.PoolManager(
+    timeout=urllib3.Timeout(connect=10.0, read=10.0),
+    retries=urllib3.Retry(total=False) # Disable retries to match original behavior
+)
+
 def lambda_handler(event, context):
     try:
         # Check ping timing and latency
         start_time = time.time()
+        
         # 10-second timeout for the request to prevent long-running calls
-        response = requests.get(constants.WEBSITE, timeout=10)
+        response = http.request('GET', constants.WEBSITE)
         end_time = time.time()
         latency_ms = (end_time - start_time) * 1000
 
         # Determine availability: 1 for success (status code 200), 0 for failure
-        availability_status = 1 if response.status_code == 200 else 0
+        availability_status = 1 if response.status == 200 else 0
 
         # Use the reusable push_metric function to send data to CloudWatch
         # Push the availability metric
         push_to_cloudwatch.push_metric(
-            namespace=constants.WAN_MANESPACE,
+            namespace=constants.WAN_NAMESPACE,
             metric_name=constants.WAN_MON_AVAILABILITY,
             value=availability_status,
             unit='None',
@@ -35,11 +42,17 @@ def lambda_handler(event, context):
 
         # Push the latency metric
         push_to_cloudwatch.push_metric(
-            namespace=constants.WAN_MANESPACE,
+            namespace=constants.WAN_NAMESPACE,
             metric_name=constants.WAN_MON_LATENCY,
             value=latency_ms,
             unit='Milliseconds',
             dimensions=[{'Name': 'URL', 'Value': constants.WEBSITE}]
+        )
+        
+        # Check and push SSL certificate expiry metric
+        push_to_cloudwatch.check_ssl_expiration_and_push_metric(
+            website=constants.WEBSITE,
+            namespace=constants.WAN_NAMESPACE
         )
 
         logger.info(f"Successfully published metrics for {constants.WEBSITE}.")
@@ -49,13 +62,13 @@ def lambda_handler(event, context):
             'body': 'Metrics published to CloudWatch'
         }
 
-    except requests.exceptions.RequestException as e:
-        # If the request fails, push a failure metric for both availability and latency
+    except (urllib3.exceptions.NewConnectionError, urllib3.exceptions.MaxRetryError, urllib3.exceptions.TimeoutError) as e:
+        # If the request fails due to a network or timeout issue, push a failure metric for both availability and latency
         logger.error(f"Failed to reach {constants.WEBSITE}: {e}")
 
         # Push an availability status of 0
         push_to_cloudwatch.push_metric(
-            namespace=constants.WAN_MANESPACE,
+            namespace=constants.WAN_NAMESPACE,
             metric_name=constants.WAN_MON_AVAILABILITY,
             value=0,
             unit='None',
@@ -64,12 +77,15 @@ def lambda_handler(event, context):
 
         # Push a latency value of -1 to indicate a failure
         push_to_cloudwatch.push_metric(
-            namespace=constants.WAN_MANESPACE,
+            namespace=constants.WAN_NAMESPACE,
             metric_name=constants.WAN_MON_LATENCY,
             value=-1,
             unit='Milliseconds',
             dimensions=[{'Name': 'URL', 'Value': constants.WEBSITE}]
         )
+        
+        # submit a SSL failure.
+        logger.warning(f"Skipping SSL certificate check due to request failure for {constants.WEBSITE}.")
 
         return {
             'statusCode': 500,
