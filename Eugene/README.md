@@ -201,3 +201,133 @@ Quality Characteristics:
 Future Improvements:
 - Add SMS/email feature where the user is to be notified if a metric's alarm has been sent off.
 - Implement another lambda (Dynamo DB) to write alarm information into a Dynamo Database, from this we want to log the information in a Dynamo DB.
+
+
+# AWS - The First Way - The Technical Practices of Flow (Cont.) 
+## Update 2/9/25
+This update involves SNS to send emails to the DevOps engineeer that an from one of the metrics has been triggered. The information from the SNS is sent to a Dynamo DB where the alarmed metric data is stored in.
+
+What it does:
+- Send alarmed metric data to DevOps Engineer via email
+- Store alarmed metric data into DynamoDB
+
+How to deploy:
+- AWS CLI configured with valid credientials
+- Python 3.11+
+- AWS CDK v2
+- Node.js (for Canary Puppeteer runtime)
+
+Steps to deploy:
+- On visual studio code, type cdk synth, then cdk deploy. This will deploy the code onto
+the Lambda website.
+-  Once on the lambda website your code will appear in a function, and once you make a test,
+it will test the websites.
+- After testing, go to the Cloudwatch dashboard and you will see three graphs each representing a metric, with a key indicating each website.
+- SNS:
+    - After deploying stack file, it will automatically send an email to the DevOps Engineer if an alarm has been triggered.
+    - In the email you can click on a link that will take you to view the alarm in the AWS Management Console.
+    - After clicking the link it will show you the alarm dashboard
+- DB Lambda:
+    - Go to DBLambda on the lambda website, then go to tables where you can see your table that you created in the stack.
+    - Click on explore table options, and scroll down until you get items returned, in this section you should see the metric that trigggered the alarm and its details such as:
+        - Alarm Description
+        - Alarm Name
+        - Dimensions
+        - Metric Name
+        - New State Reason
+        - Timestamp
+
+Quality Characteristics:
+- Security: 
+    - Uses IAM least privilege by restricting the Lambda function to only the necessary cloudwatch:PutMetricData action. 
+    - AWS credentials and access are managed through standard AWS identity and permissions.
+    - Email notifications via SNS, ensure that only the DevOps engineer receives alerts for triggered metrics, reducing the risk of sensitive information being missed or exposed.
+    - AWS IAM roles and policies control Lambda and DynamoDB access, ensuring that only authorized functions and users can read/write metric data.
+    - Data storage in DynamoDB is secure and encrypted at rest by AWS, protecting sensitive monitoring information.
+
+- Performance: 
+    - Canary runs every 5 minutes with a 1-minute timeout to minimise latency and catch outages quickly.
+    - Latency metrics allow performance monitoring of external sites in near real-time.
+    - Availability metrics show if the website is a available (1) or not available (0).
+    - Response size metric allows monitoring of abnormal increases/decreases in webpage content size that may indicate outages, errors, or changes.
+    - The metrics are checked every minuete to provide more data points to capture and display on the graphs.
+    - It is scalable as it can perform metrics on any number of websites, as long as you add the website link in the url list that is on WHLambda and stack file.
+
+- Reliability
+    - Lambda and CloudWatch provide built-in fault tolerance. If a site fails or exceeds metric thresholds, an email is sent to the DevOps engineer with details of the triggered metric.
+    - Alarm emails include a link to the CloudWatch dashboard for the specific metric and website.
+    - Alarm details are also stored in DynamoDB, ensuring a durable record of all events for future reference or audits.
+
+- Usability:
+    - Results are visible in CloudWatch dashboards, and the code is modular (separate Lambda handler, metric publisher, and CDK stack), making it easy to extend with more sites or metrics in the future.
+    - Alarm emails include direct links to the alarm in the AWS Management Console for quick access and investigation.
+
+Future Improvements:
+- make the code more modular, by adding url links to the constants file
+
+
+# Read Me File final version
+
+## Overview
+This project uses AWS Lambda and a Synthetics Canary, deployed via AWS CDK (Python), to monitor external websites by tracking availability, latency, response size, and memory metrics. The Canary simulates real user visits every 5 minutes, while Lambda collects metrics and publishes them to CloudWatch dashboards. 
+Alarms are configured to alert users if availability drops below 1, latency is high, response size is abnormal, or if the memory of a website exceeds a certain amount of RAM - making the website slow/unresponsive due to pressure added onto the servers. 
+SNS sends email notifications to DevOps engineers when alarms are triggered, and the alarmed metric data is logged in DynamoDB. The project also centralizes configuration values, such as URLs, thresholds, and metric names, for easy maintenance and scalability.
+
+## What it does:
+- Deploys a Lambda function to perform web health checks with a simple initial message.
+- Sets up a Synthetics Canary that simulates user visits every 5 minutes to monitor websites.
+- Collects availability, latency, response size, and memory metrics for multiple websites (e.g., Google, YouTube, Instagram).
+- Publishes metrics to CloudWatch and displays results on dashboards.
+- Configures alarms for metric thresholds (availability <1, high latency, abnormal response size, high memory).
+- Sends SNS email notifications to DevOps engineers when alarms are triggered.
+- Stores alarmed metric data in DynamoDB for auditing and historical tracking.
+- Centralizes configuration values (URLs, thresholds, metric names) for easy maintenance and scalability.
+
+## Steps to deploy:
+- On visual studio code, type cdk synth, then cdk deploy. This will deploy the stack code onto
+the Lambda website.
+-  Once on the lambda website your code will appear in a function, and once you make a test,
+it will test the websites and print out the results of each metric at the time of testing.
+- After testing, go to the Cloudwatch dashboard and you will see three graphs each representing a metric, with real time readings on the metrics of each website.
+- SNS:
+    - After deploying stack file, it will automatically send an email to the DevOps Engineer if an alarm has been triggered.
+    - In the email you can click on a link that will take you to view the alarm in the AWS Management Console.
+    - After clicking the link it will show you the alarm dashboard
+- DB Lambda:
+    - Go to DBLambda on the lambda website, then go to tables where you can see your table that you created in the stack.
+    - Click on explore table options, and scroll down until you get items returned, in this section you should see the metric that trigggered the alarm and its details such as:
+        - Alarm Description
+        - Alarm Name
+        - Dimensions
+        - Metric Name
+        - New State Reason
+        - Timestamp
+
+## Quality Characteristics:
+- Security: 
+    - Uses IAM least privilege by restricting the Lambda function to only the necessary cloudwatch:PutMetricData action. 
+    - AWS credentials and access are managed through standard AWS identity and permissions.
+    - Email notifications via SNS, ensure that only the DevOps engineer receives alerts for triggered metrics, reducing the risk of sensitive information being missed or exposed.
+    - AWS IAM roles and policies control Lambda and DynamoDB access, ensuring that only authorized functions and users can read/write metric data.
+    - Data storage in DynamoDB is secure and encrypted at rest by AWS, protecting sensitive monitoring information.
+
+- Performance: 
+    - Canary runs every 5 minutes with a 1-minute timeout to minimise latency and catch outages quickly.
+    - Latency metrics allow performance monitoring of external sites in near real-time.
+    - Availability metrics show if the website is a available (1) or not available (0).
+    - Response size metric allows monitoring of abnormal increases/decreases in webpage content size that may indicate outages, errors, or changes.
+    - Memory metric allows performance monitoring if the website takes up more memory than required, to prevent the servers becoming slow or unresponsive.
+    - The metrics are checked every minuete to provide more data points to capture and display on the graphs.
+    - It is scalable through the contants.py file which is used to insert as many websites links as needed to perform metrics on, and can carry over to other files.
+
+- Reliability
+    - Lambda and CloudWatch provide built-in fault tolerance. If a site fails or exceeds metric thresholds, an email is sent to the DevOps engineer with details of the triggered metric.
+    - Alarm emails include a link to the CloudWatch dashboard for the specific metric and website.
+    - Alarm details are also stored in DynamoDB, ensuring a durable record of all events for future reference or audits.
+
+- Usability:
+    - Results are visible in CloudWatch dashboards, and the code is modular (separate Lambda handler, metric publisher, and CDK stack), making it easy to extend with more sites or metrics in the future.
+    - Alarm emails include direct links to the alarm in the AWS Management Console for quick access and investigation.
+
+## Future Imporvements:
+- Implement pipeline
