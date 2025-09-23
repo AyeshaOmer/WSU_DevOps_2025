@@ -14,12 +14,7 @@ from aws_cdk import (
     aws_iam as iam
 )
 
-from constantSource import(
-    URL_MONITOR_AVAILABILITY,
-    URL_MONITOR_LATENCY,
-    URL_NAMESPACE,
-    URLS 
-)
+from Module import constantSource
 
 import aws_cdk as cdk
 import aws_cdk.aws_cloudwatch_actions as cw_actions
@@ -81,7 +76,7 @@ class PhuocTaiTranLambdaStack(Stack):
         topic = sns.Topic(self, "Alarm notification", display_name="SNS notification for www.com")
 
         #https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_sns_subscriptions/EmailSubscription.html
-        topic.add_subscription(subscriptions.EmailSubscription("tranphuoctaibxan@gmail.com"))
+        topic.add_subscription(subscriptions.EmailSubscription("tranphuoctaibxan13@gmail.com"))
         #add lambda subscription to SNS topic
 
         # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_dynamodb/README.html
@@ -104,17 +99,17 @@ class PhuocTaiTranLambdaStack(Stack):
         )
 
         # Use imported URLS for dashboard and alarms
-        for url in URLS:
+        for url in constantSource.URLS:
             availability_metric = cw.Metric(
-                namespace=URL_NAMESPACE,
-                metric_name=URL_MONITOR_AVAILABILITY,
+                namespace=constantSource.URL_NAMESPACE,
+                metric_name=constantSource.URL_MONITOR_AVAILABILITY,
                 dimensions_map={"URL": url},
                 period=Duration.minutes(1),
                 statistic="Average"
             )
             latency_metric = cw.Metric(
-                namespace=URL_NAMESPACE,
-                metric_name=URL_MONITOR_LATENCY,
+                namespace=constantSource.URL_NAMESPACE,
+                metric_name=constantSource.URL_MONITOR_LATENCY,
                 dimensions_map={"URL": url},
                 period=Duration.minutes(1),
                 statistic="Average"
