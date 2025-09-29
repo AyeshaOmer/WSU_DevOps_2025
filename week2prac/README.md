@@ -1,17 +1,15 @@
 # Website Availability Monitor with AWS CDK
 
-This project uses **AWS CDK (Python)** to deploy a monitoring solution for multiple websites. It consists of:
+This project uses **AWS CDK (Python)** to deploy a monitoring solution for [https://www.nytimes.com](https://www.nytimes.com). It consists of:
 
-- An AWS **Lambda function** that checks website latency, HTTP status, and availability
-- An **EventBridge rule** that runs the Lambda every 5 minutes
-- **Custom CloudWatch metrics** for latency, availability, and status codes
-- A **CloudWatch Dashboard** to visualise website health
-- Monitor multiple websites defined in **`sites.json`**.
+* An AWS **Lambda function** that checks website latency, HTTP status, and availability
+* An **EventBridge rule** that runs the Lambda every 5 minutes
+* **Custom CloudWatch metrics** for latency, availability, and status codes
+* **CloudWatch alarms** with **SNS notifications**
+* **DynamoDB table** logging alarm events
 
 
 ---
-
-## Getting Started
 
 ### 1. Prerequisites
 
@@ -34,10 +32,7 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 3. Configure and Deploy
-Edit sites.json to add websites
-
-### 4. Bootstrap & Deploy
+### 3. Bootstrap & Deploy
 
 Replace `YOUR_ACCOUNT_ID` in `app.py` with your AWS Account ID.
 
@@ -54,24 +49,28 @@ cdk deploy
 
 Every 5 minutes, a Lambda function runs that:
 
-- Sends an HTTP GET request to each website in the **`sites.json`** file
-- Measures **latency** in milliseconds
-- Records the **HTTP status code** (e.g., `200`, `404`, `500`)
-- Publishes custom CloudWatch metrics:
-  - `NYTMonitor/Latency`
-  - `NYTMonitor/Availability`
-  - `NYTMonitor/StatusCode_200`, `StatusCode_500`, etc.
+* Sends an HTTP GET request to each URL listed in sites.json
+* Measures latency in milliseconds
+* Records the HTTP status code
+* Publishes custom CloudWatch metrics:
 
-## CloudWatch Dashboard:
-  -  Visualizes the health of each website with widgets for:
-     - **Availability** (whether the site is up or down).
-     - **Latency (p95)** — 95th percentile latency for each website.
-     - **Status Codes** (e.g., HTTP `200`, `500` errors).
+  * `NYTMonitor/Latency`
+  * `NYTMonitor/Availability`
+  * `NYTMonitor/StatusCode_200` (and others if they occur)
 
-## CloudWatch Alarms
-  - Set up alarms for each website:
-     - **Availability Alarm**: Triggers if the site is down (availability < 1).
-     - **Latency Alarm**: Triggers if the latency exceeds the defined threshold (e.g., `2000ms`).
+* Triggers CloudWatch alarms if:
+
+  * Availability < 1
+  * Latency > 2000 ms
+
+* Publishes alarm notifications to SNS (email + logging Lambda)
+
+* Logs all alarms into a DynamoDB table (WebMonitorAlarmLogs) with:
+
+  * alarm_name
+  * timestamp
+  * new_state
+  * reason
 ---
 
 ## Viewing Results
@@ -82,47 +81,52 @@ Every 5 minutes, a Lambda function runs that:
 2. Choose **Custom namespaces**
 3. Select **`NYTMonitor`**
 4. View:
-   - `Latency`
-   - `Availability`
-   - `StatusCode_200`, `StatusCode_500`, etc.
+
+   * `Latency`
+   * `Availability`
+   * `StatusCode_200`, `StatusCode_500`, etc.
 
 ### CloudWatch → Logs
 
 1. Go to **CloudWatch > Logs > Log groups**
 2. Look for the group starting with `/aws/lambda/MonitorNYT`
-3. Inspect logs for details on each execution, including any errors or exceptions
+3. Inspect logs for details on each execution
 
-### CloudWatch → Dashboard
+### CloudWatch Dashboard
 
-1. Go to **CloudWatch > Dashboards**.
-2. Select **WebHealthDashboard**.
-3. View the following widgets:
-   - **Availability** for each site (Up or Down)
-   - **Latency (p95)** for each site
-   - **Status codes** (e.g., `200`, `500`, etc.)
+* Open the dashboard WebHealthDashboard for visual metrics and site-specific graphs
+* Shows:
 
+  * Availability
+  * Latency
+
+### DynamoDB Alarm Logs
+
+* Table: WebMonitorAlarmLogs
+* Columns:
+
+  * alarm_name
+  * timestamp
+  * new_state
+  * reason
+
+* Stores each triggered alarm for auditing or analysis
 ---
 
 ## Optional Enhancements
 
-- **CloudWatch Alarms**:
-  - Set up **alarms** for the `Availability` metric (e.g., if availability drops below `1`).
-  - Set up alarms for **high latency** (e.g., `Latency > 2000ms`).
-  
-- **SNS/Email Alerts**:
-  - Set up **SNS** to send **email alerts** when an alarm is triggered (for availability or latency).
-
-- **Monitor More URLs**:
-  - Update the `sites.json` file to add more websites. The Lambda function will automatically crawl the new websites every 5 minutes.
-
-- **Scalability**:
-  - As the number of websites grows, increase the Lambda function’s memory or adjust the timeout to handle more websites efficiently.
-
+* Add more SNS subscriptions (Slack, SMS, Lambda)
+* Add more websites to sites.json
+* Visualize metrics with additional CloudWatch dashboard widgets
+* Implement anomaly detection on metrics
 ---
 
 ## Cleanup
 
-To delete all resources created by this project:
+To delete all resources created:
 
 ```bash
 cdk destroy
+```
+
+
