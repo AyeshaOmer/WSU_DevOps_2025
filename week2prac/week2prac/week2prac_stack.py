@@ -1,6 +1,7 @@
 from aws_cdk import (
     Stack,
     Duration,
+    RemovalPolicy,
     aws_lambda as lambda_,
     aws_events as events,
     aws_events_targets as targets,
@@ -9,6 +10,7 @@ from aws_cdk import (
     aws_sns as sns,
     aws_sns_subscriptions as subs,
     aws_cloudwatch_actions as cw_actions,
+    aws_dynamodb as dynamodb,
 )
 from constructs import Construct
 import os
@@ -21,7 +23,9 @@ class Week2PracStack(Stack):
         METRIC_NAMESPACE = "NYTMonitor"
 
         # Lambda function to monitor websites
-        monitor_fn = lambda_.Function(self, "MonitorNYT",
+        monitor_fn = lambda_.Function(
+            self,
+            "MonitorNYT",
             runtime=lambda_.Runtime.PYTHON_3_12,
             handler="monitor.lambda_handler",
             code=lambda_.Code.from_asset(os.path.join(os.getcwd(), "lambda")),
@@ -39,7 +43,9 @@ class Week2PracStack(Stack):
         )
 
         # EventBridge: trigger Lambda every 5 minutes
-        events.Rule(self, "MonitorSchedule",
+        events.Rule(
+            self,
+            "MonitorSchedule",
             schedule=events.Schedule.rate(Duration.minutes(5)),
             targets=[targets.LambdaFunction(monitor_fn)]
         )
@@ -52,22 +58,50 @@ class Week2PracStack(Stack):
         dashboard = cw.Dashboard(self, "WebHealthDashboard", dashboard_name="WebHealthDashboard")
         widgets = []
 
-     
-        # SNS topic for alarm notifications
+        # SNS Topic for Alarm Notifications
         alarm_topic = sns.Topic(self, "WebMonitorAlarmTopic", topic_name="WebMonitorAlarms")
-
-        #  Subscribe email 
         alarm_topic.add_subscription(subs.EmailSubscription("vrishtii.padhya@gmail.com"))
 
-       
-        # Loop through sites to create metrics, dashboard widgets, and alarms
+        # DynamoDB Table for Alarm Logging
+        alarm_log_table = dynamodb.Table(
+            self,
+            "AlarmLogTable",
+            table_name="WebMonitorAlarmLogs",
+            partition_key=dynamodb.Attribute(
+                name="alarm_name", type=dynamodb.AttributeType.STRING
+            ),
+            sort_key=dynamodb.Attribute(
+                name="timestamp", type=dynamodb.AttributeType.STRING
+            ),
+            removal_policy=RemovalPolicy.DESTROY,
+            billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST,  
+            table_class=dynamodb.TableClass.STANDARD
+        )
+
+        # Lambda to log alarms into DynamoDB
+        log_lambda = lambda_.Function(
+            self,
+            "AlarmLoggerLambda",
+            runtime=lambda_.Runtime.PYTHON_3_12,
+            handler="alarm_logger.lambda_handler",
+            code=lambda_.Code.from_asset(os.path.join(os.getcwd(), "lambda_alarm_logger")),
+            timeout=Duration.seconds(10),
+            environment={"TABLE_NAME": alarm_log_table.table_name}
+        )
+
+        # Grant Lambda permission to write to DynamoDB
+        alarm_log_table.grant_write_data(log_lambda)
+
+        # Subscribe logging Lambda to the SNS topic
+        alarm_topic.add_subscription(subs.LambdaSubscription(log_lambda))
+
+        # Create metrics, dashboard widgets, and alarms per site
         for site in sites:
-            # Metrics (defined once per site)
+            # Metrics
             avail_metric = cw.Metric(
                 namespace=METRIC_NAMESPACE,
                 metric_name="Availability",
                 dimensions_map={"Site": site},
-                statistic="Average",
                 period=Duration.minutes(5),
                 label=f"{site} Availability",
             )
@@ -76,20 +110,19 @@ class Week2PracStack(Stack):
                 namespace=METRIC_NAMESPACE,
                 metric_name="Latency",
                 dimensions_map={"Site": site},
-                statistic="p95",
                 period=Duration.minutes(5),
                 unit=cw.Unit.MILLISECONDS,
-                label=f"{site} Latency (p95 ms)",
+                label=f"{site} Latency",
             )
 
             # Dashboard widgets
             widgets.append(cw.GraphWidget(title=f"Availability - {site}", left=[avail_metric], width=12, height=6))
-            widgets.append(cw.GraphWidget(title=f"Latency (p95 ms) - {site}", left=[latency_metric], width=12, height=6))
+            widgets.append(cw.GraphWidget(title=f"Latency - {site}", left=[latency_metric], width=12, height=6))
 
-            # -------------------------
-            # CloudWatch Alarms with SNS
-            # -------------------------
-            availability_alarm = cw.Alarm(self, f"AvailabilityAlarm-{site}",
+            # Alarms with SNS actions
+            availability_alarm = cw.Alarm(
+                self,
+                f"AvailabilityAlarm-{site}",
                 metric=avail_metric,
                 threshold=1,
                 evaluation_periods=1,
@@ -98,7 +131,9 @@ class Week2PracStack(Stack):
             )
             availability_alarm.add_alarm_action(cw_actions.SnsAction(alarm_topic))
 
-            latency_alarm = cw.Alarm(self, f"LatencyAlarm-{site}",
+            latency_alarm = cw.Alarm(
+                self,
+                f"LatencyAlarm-{site}",
                 metric=latency_metric,
                 threshold=2000,
                 evaluation_periods=1,
@@ -108,4 +143,3 @@ class Week2PracStack(Stack):
             latency_alarm.add_alarm_action(cw_actions.SnsAction(alarm_topic))
 
         dashboard.add_widgets(*widgets)
-
