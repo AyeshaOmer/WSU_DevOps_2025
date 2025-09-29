@@ -1,58 +1,27 @@
+# WSU_DevOps_2025
+This project spins up a lambda fucntion that fires every minute, collecting differenct metrics on websites. These metrics are: 
+- Availability (If the site is returning 200 as a response)
+- Latency (How long the request takes to receive a response)
+- Response size (Showing how big of a response is being returned, in gigabytes)
 
-# Welcome to your CDK Python project!
+These metrics have alarms associated with them that will send an alert once their requirements have been met. These alarms will cause AWS sns to send notification about which alarms have been triggered, and also trigger other lambda funciton that will send the alarm information into a nosql database in a log format.
 
-This is a blank project for CDK development with test.
+-insert achitect diagram-
 
-The `cdk.json` file tells the CDK Toolkit how to execute your app.
-
-This project is set up like a standard Python project.  The initialization
-process also creates a virtualenv within this project, stored under the `.venv`
-directory.  To create the virtualenv it assumes that there is a `python3`
-(or `python` for Windows) executable in your path with access to the `venv`
-package. If for any reason the automatic creation of the virtualenv fails,
-you can create the virtualenv manually.
-
-To manually create a virtualenv on MacOS and Linux:
-
+## Setup
+Before being able to clone and start running this repo, some requirements must be met.
+1. Python and Node must be installed 
+2. The aws cli must be installed from [here](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
+3. Running aws configure and inputting the required information
+4. Run the following commands to clone the repo
+```sh
+npm install -g aws-cdk 
+git clone https://github.com/Prinpa/WSU_DevOps_2025.git
+cd PatDowd
+source .venv/bin/activate
+python -m pip install -r requirements.txt
 ```
-$ python -m venv .venv
-```
+## Deploying
+Now that the project has been installed, its ready to run. THis can be done by using `cdk synth` then `cdk deploy`
 
-After the init process completes and the virtualenv is created, you can use the following
-step to activate your virtualenv.
-
-```
-$ source .venv/bin/activate
-```
-
-If you are a Windows platform, you would activate the virtualenv like this:
-
-```
-% .venv\Scripts\activate.bat
-```
-
-Once the virtualenv is activated, you can install the required dependencies.
-
-```
-$ pip install -r requirements.txt
-```
-
-At this point you can now synthesize the CloudFormation template for this code.
-
-```
-$ cdk synth
-```
-
-To add additional dependencies, for example other CDK libraries, just add
-them to your `setup.py` file and rerun the `pip install -r requirements.txt`
-command.
-
-## Useful commands
-
- * `cdk ls`          list all stacks in the app
- * `cdk synth`       emits the synthesized CloudFormation template
- * `cdk deploy`      deploy this stack to your default AWS account/region
- * `cdk diff`        compare deployed stack with current state
- * `cdk docs`        open CDK documentation
-
-Enjoy!
+And once you're done, use `cdk destroy` to stop every
