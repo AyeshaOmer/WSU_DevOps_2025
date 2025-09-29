@@ -6,6 +6,9 @@ from aws_cdk import (
     aws_events_targets as targets,
     aws_iam as iam,
     aws_cloudwatch as cw,
+    aws_sns as sns,
+    aws_sns_subscriptions as subs,
+    aws_cloudwatch_actions as cw_actions,
 )
 from constructs import Construct
 import os
@@ -49,8 +52,17 @@ class Week2PracStack(Stack):
         dashboard = cw.Dashboard(self, "WebHealthDashboard", dashboard_name="WebHealthDashboard")
         widgets = []
 
+     
+        # SNS topic for alarm notifications
+        alarm_topic = sns.Topic(self, "WebMonitorAlarmTopic", topic_name="WebMonitorAlarms")
+
+        #  Subscribe email 
+        alarm_topic.add_subscription(subs.EmailSubscription("vrishtii.padhya@gmail.com"))
+
+       
+        # Loop through sites to create metrics, dashboard widgets, and alarms
         for site in sites:
-            # Define metrics once per site
+            # Metrics (defined once per site)
             avail_metric = cw.Metric(
                 namespace=METRIC_NAMESPACE,
                 metric_name="Availability",
@@ -74,22 +86,26 @@ class Week2PracStack(Stack):
             widgets.append(cw.GraphWidget(title=f"Availability - {site}", left=[avail_metric], width=12, height=6))
             widgets.append(cw.GraphWidget(title=f"Latency (p95 ms) - {site}", left=[latency_metric], width=12, height=6))
 
-            # CloudWatch Alarms
-            cw.Alarm(self, f"AvailabilityAlarm-{site}",
+            # -------------------------
+            # CloudWatch Alarms with SNS
+            # -------------------------
+            availability_alarm = cw.Alarm(self, f"AvailabilityAlarm-{site}",
                 metric=avail_metric,
                 threshold=1,
                 evaluation_periods=1,
                 comparison_operator=cw.ComparisonOperator.LESS_THAN_THRESHOLD,
                 alarm_description=f"Alarm if {site} becomes unavailable"
             )
+            availability_alarm.add_alarm_action(cw_actions.SnsAction(alarm_topic))
 
-            cw.Alarm(self, f"LatencyAlarm-{site}",
+            latency_alarm = cw.Alarm(self, f"LatencyAlarm-{site}",
                 metric=latency_metric,
                 threshold=2000,
                 evaluation_periods=1,
                 comparison_operator=cw.ComparisonOperator.GREATER_THAN_THRESHOLD,
                 alarm_description=f"Alarm if {site} latency is too high"
             )
+            latency_alarm.add_alarm_action(cw_actions.SnsAction(alarm_topic))
 
         dashboard.add_widgets(*widgets)
 
