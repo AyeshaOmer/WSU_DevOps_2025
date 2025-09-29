@@ -15,87 +15,49 @@ class Week2PracStack(Stack):
     def __init__(self, scope: Construct, id: str, **kwargs):
         super().__init__(scope, id, **kwargs)
 
-        # Define the namespace for CloudWatch metrics
-        METRIC_NAMESPACE = "NYTMonitor"  
+        METRIC_NAMESPACE = "NYTMonitor"
 
-        # Lambda function
+        # Lambda function to monitor websites
         monitor_fn = lambda_.Function(self, "MonitorNYT",
             runtime=lambda_.Runtime.PYTHON_3_12,
             handler="monitor.lambda_handler",
             code=lambda_.Code.from_asset(os.path.join(os.getcwd(), "lambda")),
-            timeout=Duration.seconds(30), 
-            environment={
-                "METRIC_NAMESPACE": METRIC_NAMESPACE  
-            }
+            timeout=Duration.seconds(30),
+            environment={"METRIC_NAMESPACE": METRIC_NAMESPACE}
         )
 
-        # Allow Lambda to publish custom metrics to CloudWatch
+        # IAM permissions for Lambda to publish metrics
         monitor_fn.add_to_role_policy(
             iam.PolicyStatement(
                 actions=["cloudwatch:PutMetricData"],
-                resources=["*"], 
-                conditions={"StringEquals": {"cloudwatch:namespace": METRIC_NAMESPACE}}  
+                resources=["*"],
+                conditions={"StringEquals": {"cloudwatch:namespace": METRIC_NAMESPACE}}
             )
         )
 
-        # EventBridge rule to trigger Lambda every 5 minutes
+        # EventBridge: trigger Lambda every 5 minutes
         events.Rule(self, "MonitorSchedule",
-            schedule=events.Schedule.rate(Duration.minutes(5)),  # Runs every 5 minutes
+            schedule=events.Schedule.rate(Duration.minutes(5)),
             targets=[targets.LambdaFunction(monitor_fn)]
         )
 
-        # ---- CloudWatch Dashboard ----
-        # Read the same sites list at synth-time to build widgets
+        # Load sites for dashboard and alarms
         sites_file = os.path.join(os.getcwd(), "lambda", "sites.json")
         with open(sites_file, "r", encoding="utf-8") as f:
             sites = json.load(f)
 
         dashboard = cw.Dashboard(self, "WebHealthDashboard", dashboard_name="WebHealthDashboard")
+        widgets = []
 
-        # For each site, show Availability & Latency
-        rows = []
         for site in sites:
+            # Define metrics once per site
             avail_metric = cw.Metric(
                 namespace=METRIC_NAMESPACE,
                 metric_name="Availability",
                 dimensions_map={"Site": site},
                 statistic="Average",
                 period=Duration.minutes(5),
-            )
-            latency_metric = cw.Metric(
-                namespace=METRIC_NAMESPACE,
-                metric_name="Latency",
-                dimensions_map={"Site": site},
-                statistic="p95",
-                period=Duration.minutes(5),
-            )
-
-            rows.append([
-                cw.GraphWidget(title=f"Availability - {site}", left=[avail_metric], width=12, height=6),
-                cw.GraphWidget(title=f"Latency (p95 ms) - {site}", left=[latency_metric], width=12, height=6),
-            ])
-
-        # Optionally, a status code widget that filters by dimension "Code"
-        status_5xx = cw.Metric(
-            namespace=METRIC_NAMESPACE,
-            metric_name="StatusCode",
-            dimensions_map={"Code": "500"},  
-            statistic="Sum",
-            period=Duration.minutes(5),
-        )
-
-        dashboard.add_widgets(*[w for row in rows for w in row])
-        dashboard.add_widgets(cw.GraphWidget(title="5xx Errors (Sum)", left=[status_5xx], width=24, height=6))
-
-        # ---- CloudWatch Alarms ----
-        # Create CloudWatch alarms for Availability and Latency
-        for site in sites:
-            avail_metric = cw.Metric(
-                namespace=METRIC_NAMESPACE,
-                metric_name="Availability",
-                dimensions_map={"Site": site},
-                statistic="Average",
-                period=Duration.minutes(5),
+                label=f"{site} Availability",
             )
 
             latency_metric = cw.Metric(
@@ -104,22 +66,30 @@ class Week2PracStack(Stack):
                 dimensions_map={"Site": site},
                 statistic="p95",
                 period=Duration.minutes(5),
+                unit=cw.Unit.MILLISECONDS,
+                label=f"{site} Latency (p95 ms)",
             )
 
-            # Availability Alarm
-            availability_alarm = cw.Alarm(self, f"AvailabilityAlarm-{site}",
+            # Dashboard widgets
+            widgets.append(cw.GraphWidget(title=f"Availability - {site}", left=[avail_metric], width=12, height=6))
+            widgets.append(cw.GraphWidget(title=f"Latency (p95 ms) - {site}", left=[latency_metric], width=12, height=6))
+
+            # CloudWatch Alarms
+            cw.Alarm(self, f"AvailabilityAlarm-{site}",
                 metric=avail_metric,
-                threshold=1, 
+                threshold=1,
                 evaluation_periods=1,
                 comparison_operator=cw.ComparisonOperator.LESS_THAN_THRESHOLD,
                 alarm_description=f"Alarm if {site} becomes unavailable"
             )
 
-            # Latency Alarm (e.g., if latency exceeds 2000ms)
-            latency_alarm = cw.Alarm(self, f"LatencyAlarm-{site}",
+            cw.Alarm(self, f"LatencyAlarm-{site}",
                 metric=latency_metric,
-                threshold=2000, 
+                threshold=2000,
                 evaluation_periods=1,
                 comparison_operator=cw.ComparisonOperator.GREATER_THAN_THRESHOLD,
                 alarm_description=f"Alarm if {site} latency is too high"
             )
+
+        dashboard.add_widgets(*widgets)
+

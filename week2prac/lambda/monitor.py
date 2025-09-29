@@ -4,12 +4,16 @@ import json
 import os
 import boto3
 
+# CloudWatch client
+cloudwatch = boto3.client("cloudwatch")
 
-cloudwatch = boto3.client('cloudwatch')
-
-NAMESPACE = os.getenv("METRIC_NAMESPACE", "NYTMonitor")  # Default to "NYTMonitor"
+# Namespace from environment
+NAMESPACE = os.getenv("METRIC_NAMESPACE", "NYTMonitor")
 
 def _put_metrics(site: str, latency_ms: float | None, status_code: int | None, available: int):
+    """
+    Publish metrics to CloudWatch for a single website.
+    """
     metric_data = [
         {
             "MetricName": "Availability",
@@ -38,12 +42,15 @@ def _put_metrics(site: str, latency_ms: float | None, status_code: int | None, a
     cloudwatch.put_metric_data(Namespace=NAMESPACE, MetricData=metric_data)
 
 def lambda_handler(event, context):
-    # Load the list of websites to monitor from sites.json
+    """
+    Lambda handler to crawl multiple websites and publish metrics.
+    """
     sites_path = os.path.join(os.path.dirname(__file__), "sites.json")
     with open(sites_path, "r", encoding="utf-8") as f:
         sites = json.load(f)
 
     http = urllib3.PoolManager()
+
     for site in sites:
         start = time.time()
         latency_ms = None
@@ -51,15 +58,18 @@ def lambda_handler(event, context):
         available = 0
 
         try:
-            resp = http.request("GET", site, timeout=urllib3.Timeout(connect=3.0, read=10.0), retries=False)
-            latency_ms = (time.time() - start) * 1000.0 
+            resp = http.request(
+                "GET",
+                site,
+                timeout=urllib3.Timeout(connect=3.0, read=10.0),
+                retries=False
+            )
+            latency_ms = (time.time() - start) * 1000
             status_code = resp.status
             available = 1 if status_code == 200 else 0
-
         except Exception:
             available = 0
 
-        # Publish metrics for the site
         _put_metrics(site, latency_ms, status_code, available)
 
     return {"ok": True, "sites_checked": len(sites)}
