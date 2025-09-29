@@ -23,8 +23,6 @@ import aws_cdk.aws_cloudwatch_actions as cw_actions
 from constructs import Construct
 
 class PhuocTaiTranLambdaStack(Stack):
-
-# https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_lambda/README.html
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
@@ -40,11 +38,22 @@ class PhuocTaiTranLambdaStack(Stack):
             ]
         )
 
+        # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_dynamodb/README.html
+        # Create DynamoDB tables first so they can be referenced in Lambda environment
+        table = dynamodb.TableV2(self, "WebsiteAlarmsTable",
+        partition_key=dynamodb.Attribute(name="pk", type=dynamodb.AttributeType.STRING),
+        table_name="PhuocTaiTran-Website-Alarms"
+        )       
+        global_table = dynamodb.TableV2(self, "GlobalWebsiteAlarmsTable",
+            partition_key=dynamodb.Attribute(name="pk", type=dynamodb.AttributeType.STRING),
+            table_name="PhuocTaiTran-Global-Website-Alarms"
+        )
+
         fn = _lambda.Function( 
         self, "PhuocTaiTranLambda",
         runtime=_lambda.Runtime.PYTHON_3_12,
         handler="ObtainMetrics.handler",
-        code=_lambda.Code.from_asset("lib/lambda-handler/Module"),
+        code=_lambda.Code.from_asset("Module"),  # Changed from "lib/lambda-handler/Module"
         role=lambda_role  # <-- assign the role here (policy above)
         )
 
@@ -52,8 +61,20 @@ class PhuocTaiTranLambdaStack(Stack):
         self, "PhuocTaiTranHelloLambda",
         runtime=_lambda.Runtime.PYTHON_3_12,
         handler="helloLambda.handler",
-        code=_lambda.Code.from_asset("lib/lambda-handler/Module"),
+        code=_lambda.Code.from_asset("Module"),  # Changed from "lib/lambda-handler/Module"
         role=lambda_role  # <-- assign the role here (policy above)
+        )
+
+        # Add DB Lambda to handle alarms
+        fn_db = _lambda.Function(
+        self, "PhuocTaiTranDBLambda",
+        runtime=_lambda.Runtime.PYTHON_3_12,
+        handler="DBLambda.lambda_handler",
+        code=_lambda.Code.from_asset("Module"),
+        role=lambda_role,
+        environment={
+            "DYNAMODB_TABLE": table.table_name
+        }
         )
 
         
@@ -77,50 +98,40 @@ class PhuocTaiTranLambdaStack(Stack):
 
         #https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_sns_subscriptions/EmailSubscription.html
         topic.add_subscription(subscriptions.EmailSubscription("tranphuoctaibxan13@gmail.com"))
-        #add lambda subscription to SNS topic
-
-        # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_dynamodb/README.html
-        table = dynamodb.TableV2(self, "Table",
-        partition_key=dynamodb.Attribute(name="pk", type=dynamodb.AttributeType.STRING)
-        )       
-        app = cdk.App()
-        stack = cdk.Stack(app, "Stack", env=cdk.Environment(region="us-west-2"))
-
-        global_table = dynamodb.TableV2(stack, "GlobalTable",
-        partition_key=dynamodb.Attribute(name="pk", type=dynamodb.AttributeType.STRING),
-        replicas=[dynamodb.ReplicaTableProps(region="us-east-1"), dynamodb.ReplicaTableProps(region="us-east-2")
-        ]
-        )
+        #add lambda subscription to SNS topic for DB logging
+        topic.add_subscription(subscriptions.LambdaSubscription(fn_db))
 
         # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_cloudwatch/Dashboard.html
-        # Create CloudWatch dashboard
+        # Create single CloudWatch dashboard with all URLs
         dashboard = cw.Dashboard(self, "PhuocTaiTranDashboard",
             dashboard_name="PhuocTaiTranDashboard"
         )
-
+        
         # Use imported URLS for dashboard and alarms
-        for url in constantSource.URLS:
+        for i, url in enumerate(constantSource.URLS):
             availability_metric = cw.Metric(
                 namespace=constantSource.URL_NAMESPACE,
                 metric_name=constantSource.URL_MONITOR_AVAILABILITY,
                 dimensions_map={"URL": url},
-                period=Duration.minutes(1),
+                period=Duration.minutes(5),  # Match your Lambda schedule
                 statistic="Average"
             )
             latency_metric = cw.Metric(
                 namespace=constantSource.URL_NAMESPACE,
                 metric_name=constantSource.URL_MONITOR_LATENCY,
                 dimensions_map={"URL": url},
-                period=Duration.minutes(1),
+                period=Duration.minutes(5),  # Match your Lambda schedule
                 statistic="Average"
             )
 
-            # Add combined graph widget
+            # Add combined widget with separate Y-axes for each URL
             dashboard.add_widgets(
                 cw.GraphWidget(
-                    title=f"Availability & Latency for {url}",
-                    left=[availability_metric, latency_metric],
-                    left_y_axis=cw.YAxisProps(min=0),
+                    title=f"Monitoring for {url}",
+                    left=[availability_metric],
+                    right=[latency_metric],
+                    left_y_axis=cw.YAxisProps(min=0, max=1, label="Availability"),
+                    right_y_axis=cw.YAxisProps(min=0, label="Latency (seconds)"),
                     width=24,
                     height=6
                 )
@@ -138,14 +149,14 @@ class PhuocTaiTranLambdaStack(Stack):
                 treat_missing_data=cw.TreatMissingData.BREACHING
             )
 
-            # Create alarm for latency higher than 0.5
+            # Create alarm for latency higher than 0.15
             latency_alarm = cw.Alarm(
                 self, f"LatencyAlarm-{url}",
                 metric=latency_metric,
-                threshold=0.31,
+                threshold=0.15,
                 evaluation_periods=1,
                 comparison_operator=cw.ComparisonOperator.GREATER_THAN_THRESHOLD,
-                alarm_description=f"Latency higher than 0.5 for {url}",
+                alarm_description=f"Latency higher than 0.15 for {url}",
                 treat_missing_data=cw.TreatMissingData.BREACHING
             )
 
@@ -159,3 +170,7 @@ class PhuocTaiTranLambdaStack(Stack):
         
         fn_log_group_2 = fn_hello.log_group
         fn_log_group_2.apply_removal_policy(RemovalPolicy.DESTROY)
+
+# When instantiating the stack:
+app = cdk.App()
+PhuocTaiTranLambdaStack(app, "PhuocTaiTranLambdaStack", env=cdk.Environment(region="ap-southeast-2"))

@@ -1,11 +1,9 @@
 import aws_cdk.aws_cloudwatch as cloudwatch
 import ObtainMetrics 
 
-avail = 1
-latency = 0.02
 
-threshold_avail = avail
-threshold_latency = latency
+threshold_avail = ObtainMetrics.avail
+threshold_latency = ObtainMetrics.latency
 
 def create_alarms(self, URL_metrics):
     alarm_avail = cloudwatch.Alarm(self, "AvailabilityAlarm",

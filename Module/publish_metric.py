@@ -1,4 +1,5 @@
 import boto3
+from datetime import datetime
 
 def publish_metric(URL_NAMESPACE, metricName, dimension, value):
     client = boto3.client('cloudwatch')
@@ -10,7 +11,8 @@ def publish_metric(URL_NAMESPACE, metricName, dimension, value):
             {
                 'MetricName': metricName,
                 'Dimensions': dimension,
-                'Value': value
+                'Value': value,
+                'Timestamp': datetime.utcnow()
             }
         ]    
     ) 
