@@ -3,11 +3,17 @@ import os
 
 import aws_cdk as cdk
 
-from week2prac.week2prac_stack import Week2PracStack
+from week2prac.pipeline_stack import WebMonitorPipelineStack 
 
 
 app = cdk.App()
-Week2PracStack(app, "Week2PracStack",
+WebMonitorPipelineStack(
+    app,
+    "WebMonitorPipelineStack",
+    repo_string="https://github.com/Vrishtii/WSU_DevOps_2025#", 
+    branch="main",                        
+    codestar_connection_arn="arn:aws:codestar-connections:ap-southeast-2:123456789012:connection/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",  # <-- CHANGE
+    deploy_region="ap-southeast-2",
                 env=cdk.Environment(account="934249453094", region="ap-southeast-2")
 
     # If you don't specify 'env', this stack will be environment-agnostic.
