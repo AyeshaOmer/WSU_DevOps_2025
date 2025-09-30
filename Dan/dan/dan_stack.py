@@ -1,3 +1,4 @@
+
 "This file is for deploy and call built in services/components in lambda"
 
 from aws_cdk import (
@@ -11,8 +12,12 @@ from aws_cdk import (
     aws_sns as sns,
     aws_sns_subscriptions as subs,
     aws_cloudwatch_actions as cw_actions,
+    SecretValue,
 )
 from aws_cdk import aws_dynamodb as dynamodb, RemovalPolicy
+from aws_cdk import aws_codepipeline as codepipeline
+from aws_cdk import aws_codebuild as codebuild
+from aws_cdk import aws_codepipeline_actions as cp_actions
 from constructs import Construct
 
 websites = [
@@ -181,4 +186,46 @@ class DanStack(Stack):
                 )
             )
             # Add alarm actions to notify via SNS topic
+            
+        # Create the CI/CD Pipeline
+        pipeline = codepipeline.Pipeline(self, "DanPipeline")
+
+        # Source Stage
+        source_output = codepipeline.Artifact()
+        source_action = cp_actions.GitHubSourceAction(
+            action_name="DevOps_Test",
+            owner="DannisNguyen12", 
+            repo="DevOps_Pineline",
+            branch="main",
+            oauth_token=SecretValue.secrets_manager("github-token", json_field="oauth_token"),  # Store token in Secrets Manager
+            output=source_output
+        )
+        pipeline.add_stage(stage_name="Source", actions=[source_action])
+
+        # Build Stage with Lambda compute
+        build_project = codebuild.PipelineProject(
+            self, "BuildProject",
+            environment=codebuild.BuildEnvironment(
+                build_image=codebuild.LinuxBuildImage.STANDARD_7_0,
+                compute_type=codebuild.ComputeType.SMALL
+            ),
+            build_spec=codebuild.BuildSpec.from_source_filename("buildspec.yml")
+        )
+        build_output = codepipeline.Artifact()
+        build_action = cp_actions.CodeBuildAction(
+            action_name="Build",
+            project=build_project,
+            input=source_output,
+            outputs=[build_output]
+        )
+        pipeline.add_stage(stage_name="Build", actions=[build_action])
+
+        # Deploy Stage
+        deploy_action = cp_actions.CloudFormationCreateUpdateStackAction(
+            action_name="Deploy",
+            template_path=build_output.at_path("cdk.out/DanStack.template.json"),
+            stack_name="DanStack",
+            admin_permissions=True
+        )
+        pipeline.add_stage(stage_name="Deploy", actions=[deploy_action])
             
