@@ -195,7 +195,7 @@ class DanStack(Stack):
         source_action = cp_actions.GitHubSourceAction(
             action_name="DevOps_Test",
             owner="DannisNguyen12", 
-            repo="DevOps_Pineline",
+            repo="https://github.com/DannisNguyen12/DevOps_Pineline.git",
             branch="main",
             oauth_token=SecretValue.secrets_manager("github-token", json_field="oauth_token"),  # Store token in Secrets Manager
             output=source_output
