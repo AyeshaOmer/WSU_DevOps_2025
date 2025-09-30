@@ -1,0 +1,36 @@
+{
+  "version": "45.0.0",
+  "files": {
+    "60214387568e8dd79d075da27d115e0b2ec546f85a14163fef641c85f137394b": {
+      "displayName": "WHLambda/Code",
+      "source": {
+        "path": "asset.60214387568e8dd79d075da27d115e0b2ec546f85a14163fef641c85f137394b",
+        "packaging": "zip"
+      },
+      "destinations": {
+        "924210591645-us-east-1-c150ba62": {
+          "bucketName": "cdk-hnb659fds-assets-924210591645-us-east-1",
+          "objectKey": "60214387568e8dd79d075da27d115e0b2ec546f85a14163fef641c85f137394b.zip",
+          "region": "us-east-1",
+          "assumeRoleArn": "arn:${AWS::Partition}:iam::924210591645:role/cdk-hnb659fds-file-publishing-role-924210591645-us-east-1"
+        }
+      }
+    },
+    "104ab85a6a8bc517cc3e5f1d7e603c99db7f818a26f981b9a8bc866f1ba8407a": {
+      "displayName": "EugeneStack Template",
+      "source": {
+        "path": "EugeneStack.template.json",
+        "packaging": "file"
+      },
+      "destinations": {
+        "924210591645-us-east-1-0d4f7604": {
+          "bucketName": "cdk-hnb659fds-assets-924210591645-us-east-1",
+          "objectKey": "104ab85a6a8bc517cc3e5f1d7e603c99db7f818a26f981b9a8bc866f1ba8407a.json",
+          "region": "us-east-1",
+          "assumeRoleArn": "arn:${AWS::Partition}:iam::924210591645:role/cdk-hnb659fds-file-publishing-role-924210591645-us-east-1"
+        }
+      }
+    }
+  },
+  "dockerImages": {}
+}

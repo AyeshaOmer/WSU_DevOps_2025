@@ -1,0 +1,44 @@
+digraph G {
+  # Arrows represent an "unlocks" relationship (opposite of dependency). So chosen
+  # because the layout looks more natural that way.
+  # To represent subgraph dependencies, subgraphs are represented by BEGIN/END nodes.
+  # To render: `dot -Tsvg EugenePipelineStackEugenePipeline94DD0C50.dot > graph.svg`, open in a browser.
+  node [shape="box"];
+"BEGIN Build" [shape="cds", style="filled", fillcolor="#b7deff"];
+"END Build" [shape="cds", style="filled", fillcolor="#b7deff"];
+"Build.BuildCommands";
+"Source.EugeneKosiak/WSU_DevOps_2025" -> "Build.BuildCommands";
+"BEGIN Build" -> "Build.BuildCommands";
+"Build.BuildCommands" -> "END Build";
+"BEGIN UpdatePipeline" [shape="cds", style="filled", fillcolor="#b7deff"];
+"END UpdatePipeline" [shape="cds", style="filled", fillcolor="#b7deff"];
+"UpdatePipeline.SelfMutate";
+"Build.BuildCommands" -> "UpdatePipeline.SelfMutate";
+"BEGIN UpdatePipeline" -> "UpdatePipeline.SelfMutate";
+"UpdatePipeline.SelfMutate" -> "END UpdatePipeline";
+"BEGIN Assets" [shape="cds", style="filled", fillcolor="#b7deff"];
+"END Assets" [shape="cds", style="filled", fillcolor="#b7deff"];
+"Assets.FileAsset1";
+"UpdatePipeline.SelfMutate" -> "Assets.FileAsset1";
+"BEGIN Assets" -> "Assets.FileAsset1";
+"Assets.FileAsset1" -> "END Assets";
+"BEGIN Deploy" [shape="cds", style="filled", fillcolor="#b7deff"];
+"END Deploy" [shape="cds", style="filled", fillcolor="#b7deff"];
+"UpdatePipeline.SelfMutate" -> "BEGIN Deploy";
+"BEGIN Deploy.EugeneApp" [shape="cds", style="filled", fillcolor="#b7deff"];
+"END Deploy.EugeneApp" [shape="cds", style="filled", fillcolor="#b7deff"];
+"Deploy.EugeneApp.Deploy";
+"Deploy.EugeneApp.Prepare" -> "Deploy.EugeneApp.Deploy";
+"Deploy.EugeneApp.Prepare";
+"Build.BuildCommands" -> "Deploy.EugeneApp.Prepare";
+"Assets.FileAsset1" -> "Deploy.EugeneApp.Prepare";
+"BEGIN Deploy.EugeneApp" -> "Deploy.EugeneApp.Prepare";
+"Deploy.EugeneApp.Deploy" -> "END Deploy.EugeneApp";
+"BEGIN Deploy" -> "BEGIN Deploy.EugeneApp";
+"END Deploy.EugeneApp" -> "END Deploy";
+"BEGIN Source" [shape="cds", style="filled", fillcolor="#b7deff"];
+"END Source" [shape="cds", style="filled", fillcolor="#b7deff"];
+"Source.EugeneKosiak/WSU_DevOps_2025";
+"BEGIN Source" -> "Source.EugeneKosiak/WSU_DevOps_2025";
+"Source.EugeneKosiak/WSU_DevOps_2025" -> "END Source";
+}
