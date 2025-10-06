@@ -80,7 +80,19 @@ class EugenePipelineStack(Stack):
             docker_enabled_for_synth=True,
             cli_version="2.x",
             synth_code_build_defaults=pipelines.CodeBuildOptions(
-                build_environment=codebuild.BuildEnvironment(privileged=True)
+                build_environment=codebuild.BuildEnvironment(privileged=True),
+                partial_build_spec=codebuild.BuildSpec.from_object({
+                    "phases": {
+                        "build": {
+                            "commands": [
+                                "cd Eugene",
+                                "npm install -g aws-cdk",
+                                "python -m pip install -r requirements.txt",
+                                "cdk deploy EugenePipelineStack --require-approval=never --verbose"
+                            ]
+                        }
+                    }
+                })
         )
     )
         '''

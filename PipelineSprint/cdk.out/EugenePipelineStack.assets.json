@@ -1,16 +1,16 @@
 {
   "version": "45.0.0",
   "files": {
-    "fbc27c8c4b946c02dcf1a869823009c39404a9fe66b59dc9d21bb49135c8fe4c": {
+    "80b4776df4971758c9bdf6f08edadecfccb2b8a56a30006aeb83b11a7aacae05": {
       "displayName": "EugenePipelineStack Template",
       "source": {
         "path": "EugenePipelineStack.template.json",
         "packaging": "file"
       },
       "destinations": {
-        "924210591645-us-east-1-ef341bfc": {
+        "924210591645-us-east-1-421c17b4": {
           "bucketName": "cdk-hnb659fds-assets-924210591645-us-east-1",
-          "objectKey": "fbc27c8c4b946c02dcf1a869823009c39404a9fe66b59dc9d21bb49135c8fe4c.json",
+          "objectKey": "80b4776df4971758c9bdf6f08edadecfccb2b8a56a30006aeb83b11a7aacae05.json",
           "region": "us-east-1",
           "assumeRoleArn": "arn:${AWS::Partition}:iam::924210591645:role/cdk-hnb659fds-file-publishing-role-924210591645-us-east-1"
         }
