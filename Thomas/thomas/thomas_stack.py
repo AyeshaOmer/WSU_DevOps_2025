@@ -26,9 +26,10 @@ class ThomasStack(Stack):
         synth = pipelines.ShellStep("BuildCommands", 
                 input=source,
                 commands=["npm install -g aws-cdk",
-                            "pip install -r Thomas/requirements.txt",
-                            "cd Thomas",
-                            "cdk synth"]
+                          "pip install -r Thomas/requirements.txt",
+                          "cd Thomas",
+                          "cdk synth"],
+                primary_output_directory="Thomas/cdk.out"
        )
         
         pipeline = pipelines.CodePipeline(self, "ThomasPipeline", synth=synth)
@@ -78,4 +79,3 @@ class ProdStage(Stage):
     def __init__(self, scope: Construct, construct_id: str, **kwargs):
         super().__init__(scope, construct_id, **kwargs)
         DangQuocToanStack(self, "ProdWebHealth")
-
