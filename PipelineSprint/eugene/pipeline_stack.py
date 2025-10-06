@@ -4,6 +4,7 @@ from aws_cdk import (
     pipelines as pipelines,
     aws_codepipeline_actions as actions_,
     SecretValue as SecretValue,
+    aws_codebuild as codebuild,
 )
 from constructs import Construct
 from .eugene_stage import MyAppStage
@@ -78,6 +79,12 @@ class EugenePipelineStack(Stack):
             docker_enabled_for_self_mutation=True,
             docker_enabled_for_synth=True,
             cli_version="2.x",
+            synth_code_build_defaults=pipelines.CodeBuildOptions(
+                build_environment=codebuild.BuildEnvironment(privileged=True),
+                environment_variables={
+                    "CDK_APP": codebuild.BuildEnvironmentVariable(value="python3 app.py")
+                }
+        )
     )
         '''
         # All tests (unit/functional)
