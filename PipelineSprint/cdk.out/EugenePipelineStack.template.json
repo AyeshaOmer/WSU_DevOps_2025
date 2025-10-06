@@ -66,61 +66,6 @@
          ]
         }
        ]
-      },
-      {
-       "Action": [
-        "s3:GetBucket*",
-        "s3:GetObject*",
-        "s3:List*"
-       ],
-       "Effect": "Allow",
-       "Principal": {
-        "AWS": {
-         "Fn::Join": [
-          "",
-          [
-           "arn:",
-           {
-            "Ref": "AWS::Partition"
-           },
-           ":iam::",
-           {
-            "Ref": "AWS::AccountId"
-           },
-           ":role/cdk-hnb659fds-deploy-role-",
-           {
-            "Ref": "AWS::AccountId"
-           },
-           "-",
-           {
-            "Ref": "AWS::Region"
-           }
-          ]
-         ]
-        }
-       },
-       "Resource": [
-        {
-         "Fn::GetAtt": [
-          "WebHealthPipelineArtifactsBucket5FCCC92B",
-          "Arn"
-         ]
-        },
-        {
-         "Fn::Join": [
-          "",
-          [
-           {
-            "Fn::GetAtt": [
-             "WebHealthPipelineArtifactsBucket5FCCC92B",
-             "Arn"
-            ]
-           },
-           "/*"
-          ]
-         ]
-        }
-       ]
       }
      ],
      "Version": "2012-10-17"
@@ -195,37 +140,12 @@
       {
        "Action": "sts:AssumeRole",
        "Effect": "Allow",
-       "Resource": [
-        {
-         "Fn::GetAtt": [
-          "WebHealthPipelineCodeBuildActionRole8572EFE5",
-          "Arn"
-         ]
-        },
-        {
-         "Fn::Join": [
-          "",
-          [
-           "arn:",
-           {
-            "Ref": "AWS::Partition"
-           },
-           ":iam::",
-           {
-            "Ref": "AWS::AccountId"
-           },
-           ":role/cdk-hnb659fds-deploy-role-",
-           {
-            "Ref": "AWS::AccountId"
-           },
-           "-",
-           {
-            "Ref": "AWS::Region"
-           }
-          ]
-         ]
-        }
-       ]
+       "Resource": {
+        "Fn::GetAtt": [
+         "WebHealthPipelineCodeBuildActionRole8572EFE5",
+         "Arn"
+        ]
+       }
       }
      ],
      "Version": "2012-10-17"
@@ -275,7 +195,7 @@
          "OAuthToken": "{{resolve:secretsmanager:MyToken:SecretString:::}}",
          "PollForSourceChanges": true
         },
-        "Name": "WSU_DevOps_2025",
+        "Name": "EugeneKosiak_WSU_DevOps_2025",
         "OutputArtifacts": [
          {
           "Name": "EugeneKosiak_WSU_DevOps_2025_Source"
@@ -299,7 +219,7 @@
          "ProjectName": {
           "Ref": "WebHealthPipelineBuildBuildCommandsCdkBuildProjectF5E9F093"
          },
-         "EnvironmentVariables": "[{\"name\":\"_PROJECT_CONFIG_HASH\",\"type\":\"PLAINTEXT\",\"value\":\"fec6587425cc0cae91e7482c2a9816faebb9ff8c73b9d91ba6807df216061aba\"}]"
+         "EnvironmentVariables": "[{\"name\":\"_PROJECT_CONFIG_HASH\",\"type\":\"PLAINTEXT\",\"value\":\"121a865afa86d74c36cc5f6491937b64df42c0eda52c0b2043e3a89fbacd0026\"}]"
         },
         "InputArtifacts": [
          {
@@ -354,174 +274,6 @@
        }
       ],
       "Name": "UpdatePipeline"
-     },
-     {
-      "Actions": [
-       {
-        "ActionTypeId": {
-         "Category": "Build",
-         "Owner": "AWS",
-         "Provider": "CodeBuild",
-         "Version": "1"
-        },
-        "Configuration": {
-         "ProjectName": {
-          "Ref": "WebHealthPipelineAssetsFileAsset184D6268B"
-         }
-        },
-        "InputArtifacts": [
-         {
-          "Name": "BuildCommands_Output"
-         }
-        ],
-        "Name": "WHLambda_Code",
-        "RoleArn": {
-         "Fn::GetAtt": [
-          "WebHealthPipelineCodeBuildActionRole8572EFE5",
-          "Arn"
-         ]
-        },
-        "RunOrder": 1
-       }
-      ],
-      "Name": "Assets"
-     },
-     {
-      "Actions": [
-       {
-        "ActionTypeId": {
-         "Category": "Build",
-         "Owner": "AWS",
-         "Provider": "CodeBuild",
-         "Version": "1"
-        },
-        "Configuration": {
-         "ProjectName": {
-          "Ref": "WebHealthPipelinealphaallTestsC9FE9421"
-         }
-        },
-        "InputArtifacts": [
-         {
-          "Name": "EugeneKosiak_WSU_DevOps_2025_Source"
-         }
-        ],
-        "Name": "allTests",
-        "RoleArn": {
-         "Fn::GetAtt": [
-          "WebHealthPipelineCodeBuildActionRole8572EFE5",
-          "Arn"
-         ]
-        },
-        "RunOrder": 1
-       },
-       {
-        "ActionTypeId": {
-         "Category": "Deploy",
-         "Owner": "AWS",
-         "Provider": "CloudFormation",
-         "Version": "1"
-        },
-        "Configuration": {
-         "StackName": "alpha-EugeneApplicationStack",
-         "Capabilities": "CAPABILITY_NAMED_IAM,CAPABILITY_AUTO_EXPAND",
-         "RoleArn": {
-          "Fn::Join": [
-           "",
-           [
-            "arn:",
-            {
-             "Ref": "AWS::Partition"
-            },
-            ":iam::",
-            {
-             "Ref": "AWS::AccountId"
-            },
-            ":role/cdk-hnb659fds-cfn-exec-role-",
-            {
-             "Ref": "AWS::AccountId"
-            },
-            "-",
-            {
-             "Ref": "AWS::Region"
-            }
-           ]
-          ]
-         },
-         "ActionMode": "CHANGE_SET_REPLACE",
-         "ChangeSetName": "PipelineChange",
-         "TemplatePath": "BuildCommands_Output::assembly-EugenePipelineStack-alpha/EugenePipelineStackalphaEugeneApplicationStack40313A77.template.json"
-        },
-        "InputArtifacts": [
-         {
-          "Name": "BuildCommands_Output"
-         }
-        ],
-        "Name": "EugeneApplicationStack.Prepare",
-        "RoleArn": {
-         "Fn::Join": [
-          "",
-          [
-           "arn:",
-           {
-            "Ref": "AWS::Partition"
-           },
-           ":iam::",
-           {
-            "Ref": "AWS::AccountId"
-           },
-           ":role/cdk-hnb659fds-deploy-role-",
-           {
-            "Ref": "AWS::AccountId"
-           },
-           "-",
-           {
-            "Ref": "AWS::Region"
-           }
-          ]
-         ]
-        },
-        "RunOrder": 2
-       },
-       {
-        "ActionTypeId": {
-         "Category": "Deploy",
-         "Owner": "AWS",
-         "Provider": "CloudFormation",
-         "Version": "1"
-        },
-        "Configuration": {
-         "StackName": "alpha-EugeneApplicationStack",
-         "ActionMode": "CHANGE_SET_EXECUTE",
-         "ChangeSetName": "PipelineChange"
-        },
-        "Name": "EugeneApplicationStack.Deploy",
-        "RoleArn": {
-         "Fn::Join": [
-          "",
-          [
-           "arn:",
-           {
-            "Ref": "AWS::Partition"
-           },
-           ":iam::",
-           {
-            "Ref": "AWS::AccountId"
-           },
-           ":role/cdk-hnb659fds-deploy-role-",
-           {
-            "Ref": "AWS::AccountId"
-           },
-           "-",
-           {
-            "Ref": "AWS::Region"
-           }
-          ]
-         ]
-        },
-        "RunOrder": 3
-       }
-      ],
-      "Name": "alpha"
      }
     ]
    },
@@ -689,169 +441,12 @@
      ]
     },
     "Source": {
-     "BuildSpec": "{\n  \"version\": \"0.2\",\n  \"phases\": {\n    \"build\": {\n      \"commands\": [\n        \"npm install -g aws-cdk\",\n        \"ls -la $CODEBUILD_SRC_DIR\",\n        \"cd $CODEBUILD_SRC_DIR/Eugene\",\n        \"python -m pip install -r requirements.txt\",\n        \"cdk synth\"\n      ]\n    }\n  },\n  \"artifacts\": {\n    \"base-directory\": \"Eugene/cdk.out\",\n    \"files\": \"**/*\"\n  }\n}",
+     "BuildSpec": "{\n  \"version\": \"0.2\",\n  \"phases\": {\n    \"build\": {\n      \"commands\": [\n        \"cd Eugene/\",\n        \"npm install -g aws-cdk\",\n        \"ls -a\",\n        \"python -m pip install -r requirements.txt\",\n        \"cdk synth\"\n      ]\n    }\n  },\n  \"artifacts\": {\n    \"base-directory\": \"Eugene/cdk.out\",\n    \"files\": \"**/*\"\n  }\n}",
      "Type": "CODEPIPELINE"
     }
    },
    "Metadata": {
     "aws:cdk:path": "EugenePipelineStack/WebHealthPipeline/Pipeline/Build/BuildCommands/CdkBuildProject/Resource"
-   }
-  },
-  "WebHealthPipelinealphaallTestsRole96D98780": {
-   "Type": "AWS::IAM::Role",
-   "Properties": {
-    "AssumeRolePolicyDocument": {
-     "Statement": [
-      {
-       "Action": "sts:AssumeRole",
-       "Effect": "Allow",
-       "Principal": {
-        "Service": "codebuild.amazonaws.com"
-       }
-      }
-     ],
-     "Version": "2012-10-17"
-    }
-   },
-   "Metadata": {
-    "aws:cdk:path": "EugenePipelineStack/WebHealthPipeline/Pipeline/alpha/allTests/allTests/Role/Resource"
-   }
-  },
-  "WebHealthPipelinealphaallTestsRoleDefaultPolicy870A86D2": {
-   "Type": "AWS::IAM::Policy",
-   "Properties": {
-    "PolicyDocument": {
-     "Statement": [
-      {
-       "Action": [
-        "logs:CreateLogGroup",
-        "logs:CreateLogStream",
-        "logs:PutLogEvents"
-       ],
-       "Effect": "Allow",
-       "Resource": [
-        {
-         "Fn::Join": [
-          "",
-          [
-           "arn:aws:logs:us-east-1:924210591645:log-group:/aws/codebuild/",
-           {
-            "Ref": "WebHealthPipelinealphaallTestsC9FE9421"
-           },
-           ":*"
-          ]
-         ]
-        },
-        {
-         "Fn::Join": [
-          "",
-          [
-           "arn:aws:logs:us-east-1:924210591645:log-group:/aws/codebuild/",
-           {
-            "Ref": "WebHealthPipelinealphaallTestsC9FE9421"
-           }
-          ]
-         ]
-        }
-       ]
-      },
-      {
-       "Action": [
-        "codebuild:BatchPutCodeCoverages",
-        "codebuild:BatchPutTestCases",
-        "codebuild:CreateReport",
-        "codebuild:CreateReportGroup",
-        "codebuild:UpdateReport"
-       ],
-       "Effect": "Allow",
-       "Resource": {
-        "Fn::Join": [
-         "",
-         [
-          "arn:aws:codebuild:us-east-1:924210591645:report-group/",
-          {
-           "Ref": "WebHealthPipelinealphaallTestsC9FE9421"
-          },
-          "-*"
-         ]
-        ]
-       }
-      },
-      {
-       "Action": [
-        "s3:GetBucket*",
-        "s3:GetObject*",
-        "s3:List*"
-       ],
-       "Effect": "Allow",
-       "Resource": [
-        {
-         "Fn::GetAtt": [
-          "WebHealthPipelineArtifactsBucket5FCCC92B",
-          "Arn"
-         ]
-        },
-        {
-         "Fn::Join": [
-          "",
-          [
-           {
-            "Fn::GetAtt": [
-             "WebHealthPipelineArtifactsBucket5FCCC92B",
-             "Arn"
-            ]
-           },
-           "/*"
-          ]
-         ]
-        }
-       ]
-      }
-     ],
-     "Version": "2012-10-17"
-    },
-    "PolicyName": "WebHealthPipelinealphaallTestsRoleDefaultPolicy870A86D2",
-    "Roles": [
-     {
-      "Ref": "WebHealthPipelinealphaallTestsRole96D98780"
-     }
-    ]
-   },
-   "Metadata": {
-    "aws:cdk:path": "EugenePipelineStack/WebHealthPipeline/Pipeline/alpha/allTests/allTests/Role/DefaultPolicy/Resource"
-   }
-  },
-  "WebHealthPipelinealphaallTestsC9FE9421": {
-   "Type": "AWS::CodeBuild::Project",
-   "Properties": {
-    "Artifacts": {
-     "Type": "CODEPIPELINE"
-    },
-    "Cache": {
-     "Type": "NO_CACHE"
-    },
-    "Description": "Pipeline step EugenePipelineStack/Pipeline/alpha/allTests",
-    "EncryptionKey": "alias/aws/s3",
-    "Environment": {
-     "ComputeType": "BUILD_GENERAL1_SMALL",
-     "Image": "aws/codebuild/standard:7.0",
-     "ImagePullCredentialsType": "CODEBUILD",
-     "PrivilegedMode": false,
-     "Type": "LINUX_CONTAINER"
-    },
-    "ServiceRole": {
-     "Fn::GetAtt": [
-      "WebHealthPipelinealphaallTestsRole96D98780",
-      "Arn"
-     ]
-    },
-    "Source": {
-     "BuildSpec": "{\n  \"version\": \"0.2\",\n  \"phases\": {\n    \"build\": {\n      \"commands\": [\n        \"cd PipelineSprint/\",\n        \"pip install -r requirements-dev.txt\",\n        \"python -m pytest -v\"\n      ]\n    }\n  }\n}",
-     "Type": "CODEPIPELINE"
-    }
-   },
-   "Metadata": {
-    "aws:cdk:path": "EugenePipelineStack/WebHealthPipeline/Pipeline/alpha/allTests/allTests/Resource"
    }
   },
   "WebHealthPipelineCodeBuildActionRole8572EFE5": {
@@ -894,12 +489,6 @@
        "Resource": [
         {
          "Fn::GetAtt": [
-          "WebHealthPipelineAssetsFileAsset184D6268B",
-          "Arn"
-         ]
-        },
-        {
-         "Fn::GetAtt": [
           "WebHealthPipelineBuildBuildCommandsCdkBuildProjectF5E9F093",
           "Arn"
          ]
@@ -907,12 +496,6 @@
         {
          "Fn::GetAtt": [
           "WebHealthPipelineUpdatePipelineSelfMutation5BD8BFC1",
-          "Arn"
-         ]
-        },
-        {
-         "Fn::GetAtt": [
-          "WebHealthPipelinealphaallTestsC9FE9421",
           "Arn"
          ]
         }
@@ -1111,148 +694,10 @@
     "aws:cdk:path": "EugenePipelineStack/WebHealthPipeline/UpdatePipeline/SelfMutation/Resource"
    }
   },
-  "WebHealthPipelineAssetsFileRole0CD2E979": {
-   "Type": "AWS::IAM::Role",
-   "Properties": {
-    "AssumeRolePolicyDocument": {
-     "Statement": [
-      {
-       "Action": "sts:AssumeRole",
-       "Effect": "Allow",
-       "Principal": {
-        "Service": "codebuild.amazonaws.com"
-       }
-      }
-     ],
-     "Version": "2012-10-17"
-    }
-   },
-   "Metadata": {
-    "aws:cdk:path": "EugenePipelineStack/WebHealthPipeline/Assets/FileRole/Resource"
-   }
-  },
-  "WebHealthPipelineAssetsFileRoleDefaultPolicy07FD2A63": {
-   "Type": "AWS::IAM::Policy",
-   "Properties": {
-    "PolicyDocument": {
-     "Statement": [
-      {
-       "Action": [
-        "logs:CreateLogGroup",
-        "logs:CreateLogStream",
-        "logs:PutLogEvents"
-       ],
-       "Effect": "Allow",
-       "Resource": "arn:aws:logs:us-east-1:924210591645:log-group:/aws/codebuild/*"
-      },
-      {
-       "Action": [
-        "codebuild:BatchPutCodeCoverages",
-        "codebuild:BatchPutTestCases",
-        "codebuild:CreateReport",
-        "codebuild:CreateReportGroup",
-        "codebuild:UpdateReport"
-       ],
-       "Effect": "Allow",
-       "Resource": "arn:aws:codebuild:us-east-1:924210591645:report-group/*"
-      },
-      {
-       "Action": [
-        "codebuild:BatchGetBuilds",
-        "codebuild:StartBuild",
-        "codebuild:StopBuild"
-       ],
-       "Effect": "Allow",
-       "Resource": "*"
-      },
-      {
-       "Action": "sts:AssumeRole",
-       "Effect": "Allow",
-       "Resource": {
-        "Fn::Sub": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-file-publishing-role-${AWS::AccountId}-${AWS::Region}"
-       }
-      },
-      {
-       "Action": [
-        "s3:GetBucket*",
-        "s3:GetObject*",
-        "s3:List*"
-       ],
-       "Effect": "Allow",
-       "Resource": [
-        {
-         "Fn::GetAtt": [
-          "WebHealthPipelineArtifactsBucket5FCCC92B",
-          "Arn"
-         ]
-        },
-        {
-         "Fn::Join": [
-          "",
-          [
-           {
-            "Fn::GetAtt": [
-             "WebHealthPipelineArtifactsBucket5FCCC92B",
-             "Arn"
-            ]
-           },
-           "/*"
-          ]
-         ]
-        }
-       ]
-      }
-     ],
-     "Version": "2012-10-17"
-    },
-    "PolicyName": "WebHealthPipelineAssetsFileRoleDefaultPolicy07FD2A63",
-    "Roles": [
-     {
-      "Ref": "WebHealthPipelineAssetsFileRole0CD2E979"
-     }
-    ]
-   },
-   "Metadata": {
-    "aws:cdk:path": "EugenePipelineStack/WebHealthPipeline/Assets/FileRole/DefaultPolicy/Resource"
-   }
-  },
-  "WebHealthPipelineAssetsFileAsset184D6268B": {
-   "Type": "AWS::CodeBuild::Project",
-   "Properties": {
-    "Artifacts": {
-     "Type": "CODEPIPELINE"
-    },
-    "Cache": {
-     "Type": "NO_CACHE"
-    },
-    "Description": "Pipeline step EugenePipelineStack/Pipeline/Assets/WHLambda_Code",
-    "EncryptionKey": "alias/aws/s3",
-    "Environment": {
-     "ComputeType": "BUILD_GENERAL1_SMALL",
-     "Image": "aws/codebuild/standard:7.0",
-     "ImagePullCredentialsType": "CODEBUILD",
-     "PrivilegedMode": false,
-     "Type": "LINUX_CONTAINER"
-    },
-    "ServiceRole": {
-     "Fn::GetAtt": [
-      "WebHealthPipelineAssetsFileRole0CD2E979",
-      "Arn"
-     ]
-    },
-    "Source": {
-     "BuildSpec": "{\n  \"version\": \"0.2\",\n  \"phases\": {\n    \"install\": {\n      \"commands\": [\n        \"npm install -g cdk-assets@latest\"\n      ]\n    },\n    \"build\": {\n      \"commands\": [\n        \"cdk-assets --path \\\"assembly-EugenePipelineStack-alpha/EugenePipelineStackalphaEugeneApplicationStack40313A77.assets.json\\\" --verbose publish \\\"60214387568e8dd79d075da27d115e0b2ec546f85a14163fef641c85f137394b:current_account-current_region-fc636087\\\"\"\n      ]\n    }\n  }\n}",
-     "Type": "CODEPIPELINE"
-    }
-   },
-   "Metadata": {
-    "aws:cdk:path": "EugenePipelineStack/WebHealthPipeline/Assets/FileAsset1/Resource"
-   }
-  },
   "CDKMetadata": {
    "Type": "AWS::CDK::Metadata",
    "Properties": {
-    "Analytics": "v2:deflate64:H4sIAAAAAAAA/+VX32/TMBD+W+bHyQ2jFTzkrSsDobIRtRsvUTU5zrXz6tiR7TAiK/87cpwfHYgKWCvaIiVKcne5u+/7TpY9DIYXb4OLM/KkBzRdDzhLAjs3hK5xznLgTIAOJjKFqPnC5EnfWypTaP2BbX2xRa3xhmSAQnSOcGe6LXNn+jJEGFEltR5TKgthplBqFC4J19A4ZrBiUswg54wSw6S4LOgajG4SKig0TPrAeZHnUpm66z5GG6LM1TeghcvwWdzlKTGAQqMKwEhJ3vYHgiQcplDOpKmrNXaiDFsSanzxxljojomZ5PBeqjF1/7QIKmwRSdO5IStAYWyRdm8dG9XiIAIWeLIULY4K61FgPcrYoqR+2dAPBFVl7kBOofzJhkI0vZ7fX49vxh+u3tWupVQU5vNPLdcJl3QdFQlndEwp6F6jTH4lPJKcUZdYgSFMIN+d7wf7hw/pmmtg9GHeX2FGssA6XWKLiNZFBulliUKLcsUEZTnhzcy1Etcx7gevok/sp6Pny9N5K6M2SdtxbBuyjSH04aNwbHY+dI5+w7k970F6n5GDX8DzoRJ78gA3EDXzvVJEmHEHYqNO7fHf+HntPyv510D33trxFzj9gT2OxWwPOuySiBdKt3NNdpfwcOdri7fevzjlcbO9cQPRKnErf1gqfmWu93kGMhBuf7xR9iDM/wjS/1X2KLo5vd79Iao5ebgDcVIwnvan4UjJR6Amtn6B2nb5VD6+qvAMtCwUhXZfsI97UeGoNA9SvBoFr0fBm7NHzdhAFcKwDIKZf34HDDdG4x4QAAA="
+    "Analytics": "v2:deflate64:H4sIAAAAAAAA/91W0W7TMBT9lvlxcsNoBQ95y8pAqGxEycZLNE2uc9t5dezIdhiRlX9HjuOkBTEN2ASaVCnJOdf3nntuY2cezU/eRidH5F7PaLmbcbaObG4I3eGa1cCZAB0tZQnp8ITJvb6xVJYQ+MgGrrAogBekAhSjY4RH6LKtHfRljjCiSmqdUCobYVbQahRvCNcwEBlsmRQZ1JxRYpgUpw3dgdFDQgWNhuUUmDd1LZXpVU8x2hBlzr4BbVyGz+KqLokBFBvVAEZK8qAPBFlzWEGbSdNXG3CiDNsQanzxAWz06EQmObyXKqFuTeigwxaRsswN2QKKC4u0uxvd6K6fIOAaLzciqOiwXkTWaywsWvc3e+6DoKqtncQVtD9hKEar8/zmPLlIPpy966mNVBTy/FNwas0l3aXNmjOaUAp6criSXwlPJWfUJVZgCBPIq/N6sL/4kFHc0MYU5vkOM1JF1rlaWES0biooT1sUW1QrJiirCR/+MWFAfYxb4GfgE/vZTn55Oy9lGpIExYUdzDaG0NuPwrk5cugYPYJ8OO+D7IFI/Bf9/q8N7nU0jGGriDDJ2MRenZ7xz/iw9u+V/ONGn13ayx/387D9NuE8wMMu4qwJbVzKH4b1K7jfTg1UINwhslf20fALLfuP2noK2J+Cw9HhvkfWDePl9DGSKnkH1BS2w4c/v9CzXYcz0LJRFMIbjqc3PW3NrRSvFtHrRfTm6E4zNlONMKyCKPPX73BJgAQ/CQAA"
    },
    "Metadata": {
     "aws:cdk:path": "EugenePipelineStack/CDKMetadata/Default"

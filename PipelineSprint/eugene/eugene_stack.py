@@ -74,7 +74,71 @@ class EugeneStack(Stack):
                 ],
             resources=["*"],
         ))
+        ''' # Have not tested this properly until pipeline issue is fixed
+        # Metrics before deploying application
+        WebHealthInvocMetric = fn.metric_invocations()
+        WebHealthMemMetric = fn.metric("MaxMemoryUsed")
+        WebHealthDurMetric = fn.metric_duration()
 
+        # To create alarms: https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_cloudwatch/Alarm.html
+        # Expereiment the paramters needed for the alarm
+        invoc_alarm = cloudwatch.Alarm(self, "InvocationsAlarm",
+            id ='alarm_lambda_invocations',
+            metric=WebHealthInvocMetric,
+            comparison_operator=cloudwatch.ComparisonOperator.LESS_THAN_THRESHOLD,
+            threshold=1,
+            evaluation_periods=1,
+            treat_missing_data=cloudwatch.TreatMissingData.BREACHING,
+            alarm_description="Triggers when the Lambda function is not invoked (invocations < 1)."
+        )
+
+        mem_threshold_mb = int(fn.memory_size * 0.9)
+        memory_alarm = cloudwatch.Alarm(self, "InvocationsAlarm",
+            id ='alarm_lambda_invocations',
+            metric=WebHealthMemMetric,
+            comparison_operator=cloudwatch.ComparisonOperator.GREATER_THAN_THRESHOLD,
+            threshold=mem_threshold_mb, # what is the correct number for the threshold based on the metric
+            evaluation_periods=1,
+            treat_missing_data=cloudwatch.TreatMissingData.NOT_BREACHING, 
+            alarm_description=f"Triggers when MaxMemoryUsed > {mem_threshold_mb} MB (≈90% of configured memory)."
+        )
+        duration_alarm = cloudwatch.Alarm(self, "DurationAlarm",
+            id ='alarm_lambda_duration',
+            metric=WebHealthDurMetric,
+            comparison_operator=cloudwatch.ComparisonOperator.GREATER_THAN_THRESHOLD,
+            threshold=300_000, # 300,000 ms = 5 minutes
+            evaluation_periods=1,
+            treat_missing_data=cloudwatch.TreatMissingData.NOT_BREACHING, 
+            alarm_description="Triggers when Lambda duration exceeds 5 minutes."
+        )
+        # Add sns features for these lambda alarms above
+        # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_sns/Topic.html
+        topic = sns.Topic(self, "AlarmLambdaNotificationTopic",
+            display_name="Alarm Notifications for WebHealth Lambda"
+        )
+            
+        # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_sns/Subscription.html
+        # Used the prefered ITopic.addSubscription()
+        topic.add_subscription(sns_subscriptions.EmailSubscription("22067815@student.westernsydney.edu.au"))
+        topic.add_subscription(sns_subscriptions.LambdaSubscription(db_lambda))
+
+        for alarm in [invoc_alarm, memory_alarm, duration_alarm]:
+            alarm.add_alarm_action(SnsAction(topic))
+
+        # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_lambda/Alias.html
+        version = fn.current_version
+        alias = lambda_.Alias(self, "LambdaAlias",
+            alias_name="Prod",
+            version=version
+        )
+
+         # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_codedeploy/LambdaDeploymentGroup.html
+        deployment_group = codedeploy.LambdaDeploymentGroup(self, "BlueGreenDeployment",
+            alias=alias, # alias shifts traffic to the previous version of the lambda
+            deployment_config=codedeploy.LambdaDeploymentConfig.CANARY_20PERCENT_5_MINUTES,
+            alarms=[invoc_alarm, memory_alarm, duration_alarm]
+        )
+        '''
         # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_cloudwatch/Metric.html
         ''' # Create metric for lambda - ignore invocmetric = cloudwatch.Metric(, it is bellow it ath is the metric for lambda
         invocmetric = cloudwatch.Metric(
@@ -91,12 +155,14 @@ class EugeneStack(Stack):
             id ='alarm_lambda_invocations',
             metric=invocmetric,
             comparrison_operator=cloudwatch.ComparisonOperator.GREATER_THAN_THRESHOLD,
-            threshold=1,
+            threshold=1, # what is the correct number for the threshold based on the metric
             evaluation_periods=1,
         )
 
         # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_lambda/Alias.html
-            - create a temporary alias (false name) for the lambda function - listen back at explaining alias 9:54am
+            - create a temporary alias (false name) for the lambda function
+            - alias shifts traffic to the previous version of the lambda
+            - alias's purpose: points to current version of the lambda that is running
 
         version = fn.current_version
         alias = lambda_.Alias(self, "LambdaAlias",
@@ -107,7 +173,7 @@ class EugeneStack(Stack):
         - use to define automated rollback feature
         - BlueGreenDeployment - takes 50% deployment
         deployment_group = codedeploy.LambdaDeploymentGroup(self, "BlueGreenDeployment",
-            alias=alias,
+            alias=alias, # alias shifts traffic to the previous version of the lambda
             deployment_config=LambdaDeploymentConfig.Canary20Percent5Minutes
             alarms=[invoc_alarm, memory_alarm, duration_alarm]
         )

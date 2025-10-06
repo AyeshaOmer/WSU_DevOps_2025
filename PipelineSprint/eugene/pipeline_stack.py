@@ -25,7 +25,6 @@ class EugenePipelineStack(Stack):
         source = pipelines.CodePipelineSource.git_hub(
             repo_string = "EugeneKosiak/WSU_DevOps_2025",
             branch = "main",
-            action_name = "WSU_DevOps_2025", # repository name
             # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk/SecretValue.html#aws_cdk.SecretValue
             authentication = SecretValue.secrets_manager("MyToken"), # Authentication secret from AWS
             trigger = actions_.GitHubTrigger.POLL # check your repo at constant intervals to see if the code has changed, if it has then it will trigger the pipeline and build the code onto the servers
@@ -33,17 +32,29 @@ class EugenePipelineStack(Stack):
         # poll is used to pipeline calls your repo to see if code is changed, if it has then it does testing and deployment
 
         # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.pipelines/ShellStep.html
+        '''
         # Aim of shell step is to take the code from the pipeline and build it. It is buiilding your code in a container
         synth=pipelines.ShellStep("BuildCommands", input=source,
-            commands = ['npm install -g aws-cdk',
-                        'ls -la $CODEBUILD_SRC_DIR',
-                        'cd $CODEBUILD_SRC_DIR/Eugene',
+            commands = ['cd Eugene/',
+                        'npm install -g aws-cdk',
+                        'ls -a',
                         'python -m pip install -r requirements.txt', # change this requirements file to the dev one
                         'cdk synth'],
             primary_output_directory = "Eugene/cdk.out"
                 # this part 'npm install -g aws-cdk', it depends, just do trial and error
                 # Find out how to add pytest to commands (pip install pytest)
                 # Add this bellow npm install -g aws-cdk:"pip install aws-cdk.pipelines",
+        )
+        '''
+        synth = pipelines.ShellStep("BuildCommands",
+            input=source,
+            commands = [
+                'cd Eugene/',
+                'python -m pip install -r requirements.txt',
+                'npm install -g aws-cdk',
+                'cdk synth',
+            ],
+            primary_output_directory = "Eugene/cdk.out"
         )
         '''
         I might need to add what I is in screenshot for the commands (install pipelines)
@@ -63,7 +74,7 @@ class EugenePipelineStack(Stack):
         '''
         WHpipeline = pipelines.CodePipeline(self, "WebHealthPipeline", 
                                             synth = synth)
-        
+        '''
         # All tests (unit/functional)
         all_tests = pipelines.ShellStep("allTests",
             commands = ['cd PipelineSprint/',
@@ -71,19 +82,27 @@ class EugenePipelineStack(Stack):
                         'python -m pytest -v'
                         ],
             )
+        '''
         # if python -m pytest -v don't work do pytest
 
         # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk/Stage.html
         # Add env to deploy in other regions, if no env is specified it will deploy to the region specified in app.py
         # env = {'region': 'us-east-1'}
+        '''
         alpha = MyAppStage(self, 'alpha') # create stage
         WHpipeline.add_stage(alpha, pre=[all_tests]) # add stage to pipeline
+        '''
         '''
         beta =
 
         gamma = 
 
         prod = 
+        '''
+        # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.pipelines/ManualApprovalStep.html
+        ''' # implement after pipeline dployment is fixed
+        pre=[pipelines.ManualApprovalStep("PromoteToProd",
+        )]
         '''
         
 
