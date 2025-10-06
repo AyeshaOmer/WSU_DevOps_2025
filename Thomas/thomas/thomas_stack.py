@@ -43,21 +43,36 @@ class ThomasStack(Stack):
 
 
         beta_stage.add_post(
-             pipelines.ShellStep("BetaTests",
-                                 commands=["pytest tests/beta"]
-         )                               
-     )        
+            pipelines.ShellStep(
+                "BetaTests",
+                commands=[
+                    "pip install -r Thomas/requirements.txt",
+                    "cd Thomas",
+                    "pytest tests/beta",
+                ],
+            )
+        )        
 
         gamma_stage.add_post(
-            pipelines.ShellStep("GammaTests",
-                                commands=["pytest tests/gamma"]        
-        )
+            pipelines.ShellStep(
+                "GammaTests",
+                commands=[
+                    "pip install -r Thomas/requirements.txt",
+                    "cd Thomas",
+                    "pytest tests/gamma",
+                ],
+            )
         )
 
         prod_stage.add_post(                 
-            pipelines.ShellStep("ProdTests",
-                                commands=["pytest tests/prod"]
-        )
+            pipelines.ShellStep(
+                "ProdTests",
+                commands=[
+                    "pip install -r Thomas/requirements.txt",
+                    "cd Thomas",
+                    "pytest tests/prod",
+                ],
+            )
         )
         
 
