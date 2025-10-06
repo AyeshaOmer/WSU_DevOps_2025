@@ -72,8 +72,13 @@ class EugenePipelineStack(Stack):
             self, "EugenePipeline",
             synth = synth)
         '''
-        WHpipeline = pipelines.CodePipeline(self, "WebHealthPipeline", 
-                                            synth = synth)
+        WHpipeline = pipelines.CodePipeline(
+            self, "WebHealthPipeline", 
+            synth = synth,
+            docker_enabled_for_self_mutation=True,
+            docker_enabled_for_synth=True,
+            cli_version="2.x",
+    )
         '''
         # All tests (unit/functional)
         all_tests = pipelines.ShellStep("allTests",
