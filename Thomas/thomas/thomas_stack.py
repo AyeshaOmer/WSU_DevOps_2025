@@ -28,8 +28,9 @@ class ThomasStack(Stack):
                 commands=["npm install -g aws-cdk",
                           "pip install -r Thomas/requirements.txt",
                           "cd Thomas",
-                          "cdk synth"],
-                primary_output_directory="Thomas/cdk.out"
+                          "rm -rf ../cdk.out",
+                          "cdk synth",
+                          "mv cdk.out .."]
        )
         
         pipeline = pipelines.CodePipeline(self, "ThomasPipeline", synth=synth)
