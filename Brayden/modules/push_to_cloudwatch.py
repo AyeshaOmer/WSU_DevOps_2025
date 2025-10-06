@@ -32,7 +32,8 @@ def push_metric(
         dimensions = []
 
     # Construct the metric data payload.
-    Namespace = namespace,
+    # FIX: Removed the trailing comma from the Namespace assignment,
+    # which incorrectly made it a tuple.
     metric_data = [
         {
             'MetricName': metric_name,
@@ -52,6 +53,7 @@ def push_metric(
         logger.info("Metric successfully pushed.")
         return True
     except Exception as e:
+        # This will now correctly show the InvalidParameterValue error for Unit if it happens
         logger.error(f"Failed to push metric to CloudWatch: {e}")
         return False
 
@@ -63,11 +65,15 @@ def check_ssl_expiration_and_push_metric(website: str, namespace: str) -> bool:
 
     # Strip the protocol from the URL to get the hostname
     hostname = website.replace('https://', '').replace('http://', '').split('/')[0]
+    
+    # Common dimensions for all SSL metrics
+    dimensions = [{'Name': 'URL', 'Value': hostname}]
 
     try:
         # Connect to the website and get the SSL certificate
         context = ssl.create_default_context()
-        with socket.create_connection((hostname, 443)) as sock:
+        # Set a short timeout for the SSL check
+        with socket.create_connection((hostname, 443), timeout=5) as sock:
             with context.wrap_socket(sock, server_hostname=hostname) as ssock:
                 cert = ssock.getpeercert()
         
@@ -78,29 +84,50 @@ def check_ssl_expiration_and_push_metric(website: str, namespace: str) -> bool:
         # Calculate remaining days until expiration
         remaining_days = (expiry_date - datetime.utcnow()).days
 
-        # Push the remaining days to CloudWatch
-        logger.info(f"SSL certificate for {hostname} expires in {remaining_days} days. Pushing metric.")
-        return push_metric(
+        logger.info(f"SSL certificate for {hostname} expires in {remaining_days} days. Pushing metrics.")
+        
+        # 1. Push remaining days metric
+        push_metric(
             namespace=namespace,
             metric_name="SSLCertificateExpiryDays",
             value=remaining_days,
-            unit='Days',
-            dimensions=[{'Name': 'URL', 'Value': hostname}]
+            unit='Count', # FIXED: Must be 'Count' or 'None', not 'Days'
+            dimensions=dimensions
+        )
+        
+        # 2. Push success metric (0 for success)
+        return push_metric(
+            namespace=namespace,
+            metric_name="SSLCertificateCheckFailure",
+            value=0, 
+            unit='None',
+            dimensions=dimensions
         )
 
     except Exception as e:
         logger.error(f"Failed to check SSL certificate for {hostname}: {e}")
-        # Push a failure metric value to indicate a failure
-        return push_metric(
+        
+        # 1. Push a failure metric value (-1) for days remaining
+        push_metric(
             namespace=namespace,
             metric_name="SSLCertificateExpiryDays",
             value=-1,
-            unit='Days',
-            dimensions=[{'Name': 'URL', 'Value': hostname}]
+            unit='Count', # FIXED: Must be 'Count' or 'None', not 'Days'
+            dimensions=dimensions
+        )
+        
+        # 2. Push an explicit failure metric (1 for failure)
+        return push_metric(
+            namespace=namespace,
+            metric_name="SSLCertificateCheckFailure",
+            value=1,
+            unit='None',
+            dimensions=dimensions
         )
 
 # You can also define a function to push multiple metrics at once for efficiency.
 def push_multiple_metrics(namespace: str, metric_data: list) -> bool:
+    # ... (function body remains unchanged)
     if cloudwatch_client is None:
         logger.error("CloudWatch client is not available. Cannot push metrics.")
         return False
