@@ -80,10 +80,7 @@ class EugenePipelineStack(Stack):
             docker_enabled_for_synth=True,
             cli_version="2.x",
             synth_code_build_defaults=pipelines.CodeBuildOptions(
-                build_environment=codebuild.BuildEnvironment(privileged=True),
-                environment_variables={
-                    "CDK_APP": codebuild.BuildEnvironmentVariable(value="python3 app.py")
-                }
+                build_environment=codebuild.BuildEnvironment(privileged=True)
         )
     )
         '''
