@@ -4,7 +4,6 @@ from aws_cdk import (
     pipelines as pipelines,
     aws_codepipeline_actions as actions_,
     SecretValue as SecretValue,
-    aws_codebuild as codebuild,
 )
 from constructs import Construct
 from .eugene_stage import MyAppStage
@@ -33,7 +32,6 @@ class EugenePipelineStack(Stack):
         # poll is used to pipeline calls your repo to see if code is changed, if it has then it does testing and deployment
 
         # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.pipelines/ShellStep.html
-        '''
         # Aim of shell step is to take the code from the pipeline and build it. It is buiilding your code in a container
         synth=pipelines.ShellStep("BuildCommands", input=source,
             commands = ['cd Eugene/',
@@ -45,17 +43,6 @@ class EugenePipelineStack(Stack):
                 # this part 'npm install -g aws-cdk', it depends, just do trial and error
                 # Find out how to add pytest to commands (pip install pytest)
                 # Add this bellow npm install -g aws-cdk:"pip install aws-cdk.pipelines",
-        )
-        '''
-        synth = pipelines.ShellStep("BuildCommands",
-            input=source,
-            commands = [
-                'cd Eugene/',
-                'python -m pip install -r requirements.txt',
-                'npm install -g aws-cdk',
-                'cdk synth',
-            ],
-            primary_output_directory = "Eugene/cdk.out"
         )
         '''
         I might need to add what I is in screenshot for the commands (install pipelines)
@@ -73,28 +60,8 @@ class EugenePipelineStack(Stack):
             self, "EugenePipeline",
             synth = synth)
         '''
-        WHpipeline = pipelines.CodePipeline(
-            self, "WebHealthPipeline", 
-            synth = synth,
-            docker_enabled_for_self_mutation=True,
-            docker_enabled_for_synth=True,
-            cli_version="2.x",
-            synth_code_build_defaults=pipelines.CodeBuildOptions(
-                build_environment=codebuild.BuildEnvironment(privileged=True),
-                partial_build_spec=codebuild.BuildSpec.from_object({
-                    "phases": {
-                        "build": {
-                            "commands": [
-                                "cd Eugene",
-                                "npm install -g aws-cdk",
-                                "python -m pip install -r requirements.txt",
-                                "cdk deploy EugenePipelineStack --require-approval=never --verbose"
-                            ]
-                        }
-                    }
-                })
-        )
-    )
+        WHpipeline = pipelines.CodePipeline(self, "WebHealthPipeline", 
+                                            synth = synth)
         '''
         # All tests (unit/functional)
         all_tests = pipelines.ShellStep("allTests",
