@@ -23,15 +23,17 @@ class ThomasStack(Stack):
                 trigger=GitHubTrigger.POLL
 )
         
-        synth = pipelines.ShellStep("BuildCommands", 
-                input=source,
-                commands=["npm install -g aws-cdk",
-                          "pip install -r Thomas/requirements.txt",
-                          "cd Thomas",
-                          "rm -rf ../cdk.out",
-                          "cdk synth",
-                          "mv cdk.out .."]
-       )
+        synth = pipelines.ShellStep(
+            "BuildCommands",
+            input=source,
+            commands=[
+                "npm install -g aws-cdk",
+                "pip install -r Thomas/requirements.txt",
+                "cd Thomas",
+                "cdk synth",
+            ],
+            primary_output_directory="Thomas/cdk.out",
+        )
         
         pipeline = pipelines.CodePipeline(self, "ThomasPipeline", synth=synth)
 
