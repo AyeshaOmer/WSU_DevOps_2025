@@ -45,6 +45,7 @@ class ProjectPipelineStack(Stack):
         all_tests = pipelines.ShellStep("allTests",
             commands = ['cd ProjectPipeline/',
                         'pip install -r requirements-dev.txt',
+                        'pip install aws-cdk-lib constructs',
                         'python -m pytest -v'
                         ],
             )
