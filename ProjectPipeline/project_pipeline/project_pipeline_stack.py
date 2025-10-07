@@ -43,7 +43,7 @@ class ProjectPipelineStack(Stack):
 
         # All tests (unit/functional)
         all_tests = pipelines.ShellStep("allTests",
-            commands = ['cd PipelineSprint/',
+            commands = ['cd ProjectPipeline/',
                         'pip install -r requirements-dev.txt',
                         'python -m pytest -v'
                         ],
