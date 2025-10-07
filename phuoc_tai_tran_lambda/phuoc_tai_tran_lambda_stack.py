@@ -39,14 +39,9 @@ class PhuocTaiTranLambdaStack(Stack):
         )
 
         # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_dynamodb/README.html
-        # Create DynamoDB tables first so they can be referenced in Lambda environment
+        # Create DynamoDB table for storing alarm notifications
         table = dynamodb.TableV2(self, "WebsiteAlarmsTable",
-        partition_key=dynamodb.Attribute(name="pk", type=dynamodb.AttributeType.STRING),
-        table_name="PhuocTaiTran-Website-Alarms"
-        )       
-        global_table = dynamodb.TableV2(self, "GlobalWebsiteAlarmsTable",
-            partition_key=dynamodb.Attribute(name="pk", type=dynamodb.AttributeType.STRING),
-            table_name="PhuocTaiTran-Global-Website-Alarms"
+            partition_key=dynamodb.Attribute(name="pk", type=dynamodb.AttributeType.STRING)
         )
 
         fn = _lambda.Function( 
