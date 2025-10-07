@@ -48,7 +48,7 @@ def test_iam_role():
     app = core.App()
     stack = PhuocTaiTranLambdaStack(app, "phuoc-tai-tran")
     template = assertions.Template.from_stack(stack)
-    template.resource_count_is("AWS::IAM::Role", 2)
+    template.resource_count_is("AWS::IAM::Role", 3)
 
 def test_api_gateway():
     app = core.App()
@@ -60,7 +60,7 @@ def test_cloudwatch_alarms():
     app = core.App()
     stack = PhuocTaiTranLambdaStack(app, "phuoc-tai-tran")
     template = assertions.Template.from_stack(stack)
-    template.resource_count_is("AWS::CloudWatch::Alarm", 6)
+    template.resource_count_is("AWS::CloudWatch::Alarm", 8)
 
 def test_cloudwatch_dashboard():
     app = core.App()

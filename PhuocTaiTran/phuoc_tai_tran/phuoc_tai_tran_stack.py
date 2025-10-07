@@ -39,9 +39,10 @@ class PhuocTaiTranStack(Stack):
             synth=synth)
         unit_test = pipelines.ShellStep("unitTest",
                                         commands=[
-                                            
+                                            "cd PhuocTaiTran",
+                                            "python -m pip install -r requirements.txt",
                                             "python -m pip install -r requirements-dev.txt",
-                                            "pytest",                                           
+                                            "pytest tests/unit/test_phuoc_tai_tran_stack.py -v",                                           
                                         ]
         )
         
