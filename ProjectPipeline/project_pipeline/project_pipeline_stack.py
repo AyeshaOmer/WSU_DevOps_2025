@@ -27,12 +27,12 @@ class ProjectPipelineStack(Stack):
         # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.pipelines/ShellStep.html
         # Aim of shell step is to take the code from the pipeline and build it. It is buiilding your code in a container
         synth=pipelines.ShellStep("BuildCommands", input=source,
-            commands = ['cd Eugene/',
+            commands = ['cd ProjectPipeline/',
                         'npm install -g aws-cdk',
                         'ls -a',
                         'python -m pip install -r requirements.txt', # change this requirements file to the dev one
                         'cdk synth'],
-            primary_output_directory = "Eugene/cdk.out"
+            primary_output_directory = "ProjectPipeline/cdk.out"
                 # this part 'npm install -g aws-cdk', it depends, just do trial and error
                 # Find out how to add pytest to commands (pip install pytest)
                 # Add this bellow npm install -g aws-cdk:"pip install aws-cdk.pipelines",
