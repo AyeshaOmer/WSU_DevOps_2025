@@ -1,0 +1,6 @@
+{
+    "python.analysis.extraPaths": [
+        "./module",
+        "./lib/lambda-handler/Module"
+    ]
+}
