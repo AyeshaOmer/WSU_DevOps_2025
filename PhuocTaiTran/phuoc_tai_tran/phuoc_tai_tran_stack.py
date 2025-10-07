@@ -28,18 +28,18 @@ class PhuocTaiTranStack(Stack):
         synth=pipelines.ShellStep("BuildCommands",
             input=source,
             commands=[
+                "cd PhuocTaiTran",
                 "npm install -g aws-cdk",
                 "python -m pip install -r requirements.txt",
-                "cd phuoc_tai_tran",
                 "cdk synth"
             ],
-            primary_output_directory="cdk.out"
+            primary_output_directory="PhuocTaiTran/cdk.out"
         )
         pipeline = pipelines.CodePipeline(self, "PhuocTaiTranPipeline",
             synth=synth)
         unit_test = pipelines.ShellStep("unitTest",
                                         commands=[
-                                            "cd phuoc_tai_tran",
+                                            
                                             "python -m pip install -r requirements-dev.txt",
                                             "pytest",                                           
                                         ]
@@ -48,7 +48,6 @@ class PhuocTaiTranStack(Stack):
         # Stage 1: Alpha - Basic functional testing
         alpha_functional_test = pipelines.ShellStep("AlphaFunctionalTest",
                                         commands=[
-                                            "cd phuoc_tai_tran",
                                             "echo 'Running Alpha functional tests...'", # print statement
                                             "# Test Lambda function deployment", # Comment
                                             "aws lambda get-function --function-name PhuocTaiTranStack-alpha-PhuocTaiTranApplicationStack-PhuocTaiTranLambda* || echo 'Lambda test passed'",
@@ -59,7 +58,6 @@ class PhuocTaiTranStack(Stack):
         # Stage 2: Beta - Integration testing
         beta_integration_test = pipelines.ShellStep("BetaIntegrationTest",
                                         commands=[
-                                            "cd phuoc_tai_tran",
                                             "echo 'Running Beta integration tests...'", # print statement
                                             "# Test CloudWatch metrics integration", # Comment
                                             "aws cloudwatch list-metrics --namespace PhuocTaiTranProject_WSU2025 || echo 'CloudWatch integration test passed'",
@@ -70,7 +68,7 @@ class PhuocTaiTranStack(Stack):
         # Stage 3: Gamma - Performance testing
         gamma_performance_test = pipelines.ShellStep("GammaPerformanceTest",
                                         commands=[
-                                            "cd phuoc_tai_tran",
+                                           
                                             "echo 'Running Gamma performance tests...'", # print statement
                                             "# Test Lambda performance and CloudWatch dashboard", # Comment
                                             "aws cloudwatch get-dashboard --dashboard-name PhuocTaiTranDashboard || echo 'Dashboard performance test passed'",
@@ -81,7 +79,6 @@ class PhuocTaiTranStack(Stack):
         # Stage 4: Pre-prod - Security and compliance testing
         preprod_security_test = pipelines.ShellStep("PreProdSecurityTest",
                                         commands=[
-                                            "cd phuoc_tai_tran",
                                             "echo 'Running Pre-production security tests...'", # print statement
                                             "# Test IAM roles and permissions", # Comment
                                             "aws sts get-caller-identity",
