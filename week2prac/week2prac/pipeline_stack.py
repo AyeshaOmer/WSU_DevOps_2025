@@ -36,16 +36,18 @@ class WebMonitorPipelineStack(Stack):
             install_commands=[
                 "npm install -g aws-cdk",
                 "python -m pip install --upgrade pip",
-                # 👇 FIX: install from the subfolder that contains requirements.txt
-                "cd week2prac && python -m pip install -r requirements.txt",
+                #  install requirements from the subfolder
+                "python -m pip install -r week2prac/requirements.txt",
             ],
             commands=[
-                # 👇 FIX: synth from the same subfolder where cdk.json lives
-                "cd week2prac && cdk synth",
+                #  synth the app located in the subfolder 
+                "cdk synth --app 'python week2prac/app.py'",
+                # (alternative if your image doesn’t have cdk on PATH)
+                # "npx cdk synth --app 'python week2prac/app.py'",
             ],
-            # (Optional) help the pipeline find the assembly if it complains:
-            # primary_output_directory="week2prac/cdk.out",
-        )
+                    # (Optional) help the pipeline find the assembly if it complains:
+                    # primary_output_directory="week2prac/cdk.out",
+                )
 
         pipeline = pipelines.CodePipeline(
             self,
