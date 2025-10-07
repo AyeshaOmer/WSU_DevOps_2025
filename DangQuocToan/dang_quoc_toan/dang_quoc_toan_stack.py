@@ -78,7 +78,11 @@ class DangQuocToanStack(Stack):
         #--- 3. SNS Topic for alarms (uncomment and add your email)
         # Reference: AWS CDK Python – aws_sns.Topic
         # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_sns/README.html#topic
-        topic = sns.Topic(self, "WebHealthAlarms", topic_name="web-health-alarms")
+        topic = sns.Topic(
+            self,
+            "WebHealthAlarms",
+            topic_name=f"web-health-alarms-{self.stack_name}".lower(),
+        )
         # Reference: AWS CDK Python – aws_sns_subscriptions.EmailSubscription
         # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_sns_subscriptions/README.html#emailsubscription
         topic.add_subscription(subs.EmailSubscription("22119278@student.westernsydney.edu.au"))
@@ -86,8 +90,9 @@ class DangQuocToanStack(Stack):
         #--- 4. DynamoDB for alarm logs
             # Reference: https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_dynamodb/TableV2.html
         alarm_log_table = TableV2(
-            self, "AlarmLogTable",
-            table_name="AlarmLogTable",
+            self,
+            "AlarmLogTable",
+            table_name=f"AlarmLogTable-{self.stack_name}",
             partition_key=Attribute(name="AlarmName", type=AttributeType.STRING),
             sort_key=Attribute(name="Timestamp", type=AttributeType.STRING),
             billing=Billing.on_demand(),
@@ -247,12 +252,12 @@ class DangQuocToanStack(Stack):
         cloudwatch.Dashboard(
             self,
             "WHLambdaDashboard",
-            dashboard_name = "URLMONITOR_DASHBOARD",
+            dashboard_name=f"URLMONITOR_DASHBOARD_{self.stack_name}",
             widgets=[
-                    [avail_widget], 
-                    [latency_widget], 
-                    [status_code_widget],
-        ],
+                [avail_widget],
+                [latency_widget],
+                [status_code_widget],
+            ],
         )
 
         # Helper for ID-safe names (CDK IDs must avoid problematic chars)
