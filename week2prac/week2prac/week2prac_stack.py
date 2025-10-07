@@ -61,7 +61,13 @@ class Week2PracStack(Stack):
             sites = json.load(f)
 
         # --- Dashboard ---
-        dashboard = cw.Dashboard(self, "WebHealthDashboard", dashboard_name="WebHealthDashboard")
+        # Use the stack name to make the dashboard unique for Beta, Gamma, Prod
+        dashboard = cw.Dashboard(
+            self,
+            "WebHealthDashboard",
+            dashboard_name=f"WebHealthDashboard-{self.stack_name}"
+        )
+
         widgets: list[cw.IWidget] = []
 
         # --- SNS topic for notifications ---
