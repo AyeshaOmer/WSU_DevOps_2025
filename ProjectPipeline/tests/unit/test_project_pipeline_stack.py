@@ -1,9 +1,7 @@
 import json
 import pytest
-from aws_cdk import assertions, App
-#from project_pipeline.eugene_stack import EugeneStack
+from aws_cdk import assertions, core
 from modules import constants
-
 from project_pipeline.project_pipeline_stack import ProjectPipelineStack
 
 # example tests. To run these tests, uncomment this file along with the example

@@ -31,6 +31,7 @@ class EugeneStack(Stack):
 
         # The code that defines your stack goes here
 
+        memory_size_mb = 512
         # function to run WHLambda file
         # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_lambda/README.html#function-timeout
         fn = lambda_.Function(self, "WHLambda",
@@ -38,6 +39,7 @@ class EugeneStack(Stack):
             timeout=Duration.minutes(10),
             handler="WHLambda.lambda_handler",
             code=lambda_.Code.from_asset("./modules"),
+            memory_size=memory_size_mb,
         )
         fn.apply_removal_policy(RemovalPolicy.DESTROY)
 
@@ -74,7 +76,7 @@ class EugeneStack(Stack):
                 ],
             resources=["*"],
         ))
-        ''' # Have not tested this properly until pipeline issue is fixed
+        # Have not tested this properly until pipeline issue is fixed
         # Metrics before deploying application
         WebHealthInvocMetric = fn.metric_invocations()
         WebHealthMemMetric = fn.metric("MaxMemoryUsed")
@@ -82,8 +84,7 @@ class EugeneStack(Stack):
 
         # To create alarms: https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_cloudwatch/Alarm.html
         # Expereiment the paramters needed for the alarm
-        invoc_alarm = cloudwatch.Alarm(self, "InvocationsAlarm",
-            id ='alarm_lambda_invocations',
+        invoc_alarm = cloudwatch.Alarm(self, f"InvocationsAlarm-{construct_id}",
             metric=WebHealthInvocMetric,
             comparison_operator=cloudwatch.ComparisonOperator.LESS_THAN_THRESHOLD,
             threshold=1,
@@ -92,9 +93,9 @@ class EugeneStack(Stack):
             alarm_description="Triggers when the Lambda function is not invoked (invocations < 1)."
         )
 
-        mem_threshold_mb = int(fn.memory_size * 0.9)
-        memory_alarm = cloudwatch.Alarm(self, "InvocationsAlarm",
-            id ='alarm_lambda_invocations',
+
+        mem_threshold_mb = int(memory_size_mb * 0.9)
+        memory_alarm = cloudwatch.Alarm(self, f"MemoryAlarm-{construct_id}",
             metric=WebHealthMemMetric,
             comparison_operator=cloudwatch.ComparisonOperator.GREATER_THAN_THRESHOLD,
             threshold=mem_threshold_mb, # what is the correct number for the threshold based on the metric
@@ -102,8 +103,7 @@ class EugeneStack(Stack):
             treat_missing_data=cloudwatch.TreatMissingData.NOT_BREACHING, 
             alarm_description=f"Triggers when MaxMemoryUsed > {mem_threshold_mb} MB (≈90% of configured memory)."
         )
-        duration_alarm = cloudwatch.Alarm(self, "DurationAlarm",
-            id ='alarm_lambda_duration',
+        duration_alarm = cloudwatch.Alarm(self, f"DurationAlarm-{construct_id}",
             metric=WebHealthDurMetric,
             comparison_operator=cloudwatch.ComparisonOperator.GREATER_THAN_THRESHOLD,
             threshold=300_000, # 300,000 ms = 5 minutes
@@ -135,10 +135,10 @@ class EugeneStack(Stack):
          # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_codedeploy/LambdaDeploymentGroup.html
         deployment_group = codedeploy.LambdaDeploymentGroup(self, "BlueGreenDeployment",
             alias=alias, # alias shifts traffic to the previous version of the lambda
-            deployment_config=codedeploy.LambdaDeploymentConfig.CANARY_20PERCENT_5_MINUTES,
+            deployment_config=codedeploy.LambdaDeploymentConfig.CANARY_10_PERCENT_5_MINUTES,
             alarms=[invoc_alarm, memory_alarm, duration_alarm]
         )
-        '''
+
         # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_cloudwatch/Metric.html
         ''' # Create metric for lambda - ignore invocmetric = cloudwatch.Metric(, it is bellow it ath is the metric for lambda
         invocmetric = cloudwatch.Metric(

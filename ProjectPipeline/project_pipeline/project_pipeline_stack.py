@@ -2,12 +2,13 @@ from aws_cdk import (
     # Duration,
     Stack,
     # aws_sqs as sqs,
-    Stack,
+
     pipelines as pipelines,
     aws_codepipeline_actions as actions_,
     SecretValue as SecretValue,
 )
 from constructs import Construct
+from .eugene_stage import MyAppStage
 
 class ProjectPipelineStack(Stack):
 
@@ -37,25 +38,9 @@ class ProjectPipelineStack(Stack):
                 # Find out how to add pytest to commands (pip install pytest)
                 # Add this bellow npm install -g aws-cdk:"pip install aws-cdk.pipelines",
         )
-        '''
-        I might need to add what I is in screenshot for the commands (install pipelines)
-        Try adding cd eugene/
-        '''
-        
-        ''' # Original commands
-                    commands = ['npm install -g aws-cdk',
-                        'cd PipelineSprint', 
-                        'python -m pip install -r requirements.txt', 
-                        'cdk synth']
-        '''
-        ''' # Original pipeline code
-        pipeline = pipelines.CodePipeline(
-            self, "EugenePipeline",
-            synth = synth)
-        '''
         WHpipeline = pipelines.CodePipeline(self, "WebHealthPipeline", 
                                             synth = synth)
-        '''
+
         # All tests (unit/functional)
         all_tests = pipelines.ShellStep("allTests",
             commands = ['cd PipelineSprint/',
@@ -63,16 +48,16 @@ class ProjectPipelineStack(Stack):
                         'python -m pytest -v'
                         ],
             )
-        '''
+
         # if python -m pytest -v don't work do pytest
 
         # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk/Stage.html
         # Add env to deploy in other regions, if no env is specified it will deploy to the region specified in app.py
         # env = {'region': 'us-east-1'}
-        '''
-        alpha = MyAppStage(self, 'alpha') # create stage
+
+        alpha = MyAppStage(self, 'alpha') # create stage # teacher did MyPipelineStage
         WHpipeline.add_stage(alpha, pre=[all_tests]) # add stage to pipeline
-        '''
+
         '''
         beta =
 
@@ -81,10 +66,9 @@ class ProjectPipelineStack(Stack):
         prod = 
         '''
         # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.pipelines/ManualApprovalStep.html
-        ''' # implement after pipeline dployment is fixed
-        pre=[pipelines.ManualApprovalStep("PromoteToProd",
-        )]
-        '''
+        # implement after pipeline dployment is fixed
+        pre=[pipelines.ManualApprovalStep("PromoteToProd",)]
+
         
 
 
