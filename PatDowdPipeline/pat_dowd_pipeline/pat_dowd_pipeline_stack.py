@@ -21,24 +21,15 @@ class PatDowdPipelineStack(Stack):
             "Synth",
             input=source,
             commands=[
+                "cd PatDowd",
                 "npm install -g aws-cdk",
-                "cdk bootstrap",
-                "cd PatDowdPipeline",
                 "python -m pip install -r requirements.txt",
                 "cdk synth"
             ],
-            primary_output_directory="PatDowdPipeline/cdk.out"
+            primary_output_directory="PatDowd/cdk.out"
         )
 
-        # Unit test step
-        unit_test = pipelines.ShellStep(
-            "UnitTests",
-            commands=[
-                "cd PatDowdPipeline",
-                "python -m pip install -r requirements-dev.txt",
-                "pytest"
-            ]
-        )
+
 
         # Define IAM role for the pipeline
         pipeline_role = iam.Role(
@@ -56,10 +47,20 @@ class PatDowdPipelineStack(Stack):
 
         # Create pipeline with the role
         pipeline = pipelines.CodePipeline(
-        self,
-        "PatPipeline",
-        synth=synth,
-        role=pipeline_role
+            self,
+            "PatPipeline",
+            synth=synth,
+            role=pipeline_role
+        )
+
+                # Unit test step
+        unit_test = pipelines.ShellStep(
+            "UnitTests",
+            commands=[
+                "cd PatDowdPipeline",
+                "python -m pip install -r requirements-dev.txt",
+                "pytest"
+            ]
         )
         # Add unit test step
         pipeline.add_wave("TestWave", pre=[unit_test])
