@@ -4,6 +4,7 @@ from aws_cdk import (
     aws_iam as iam,
 )
 from constructs import Construct
+from pat_dowd.pipeline_Stage import MypipelineStage
 
 class PatDowdPipelineStack(Stack):
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
@@ -12,7 +13,7 @@ class PatDowdPipelineStack(Stack):
         # Source step
         source = pipelines.CodePipelineSource.connection(
             "prinpa/WSU_DEVOPS_2025",
-            "main",
+            "refactor",
             connection_arn="arn:aws:codeconnections:ap-southeast-2:457795063739:connection/0067ee37-61b7-473e-a263-f3b975e7b3bf",
         )
 
@@ -28,7 +29,7 @@ class PatDowdPipelineStack(Stack):
             ],
             primary_output_directory="PatDowd/cdk.out"
         )
-
+        
 
 
         # Define IAM role for the pipeline
@@ -50,17 +51,24 @@ class PatDowdPipelineStack(Stack):
             self,
             "PatPipeline",
             synth=synth,
-            role=pipeline_role
+            role=pipeline_role,
         )
 
-                # Unit test step
-        unit_test = pipelines.ShellStep(
-            "UnitTests",
-            commands=[
-                "cd PatDowdPipeline",
-                "python -m pip install -r requirements-dev.txt",
-                "pytest"
-            ]
-        )
-        # Add unit test step
-        pipeline.add_wave("TestWave", pre=[unit_test])
+        WHpipeline=pipelines.CodePipeline(self,"WebHealthPipeline",
+                                              synth=synth)
+
+
+        alpha = MypipelineStage(self,'alpha')
+        WHpipeline.add_stage(alpha)
+
+        #         # Unit test step
+        # unit_test = pipelines.ShellStep(
+        #     "UnitTests",
+        #     commands=[
+        #         "cd PatDowdPipeline",
+        #         "python -m pip install -r requirements-dev.txt",
+        #         "pytest"
+        #     ]
+        # )
+        # # Add unit test step
+        # pipeline.add_wave("TestWave", pre=[unit_test])
