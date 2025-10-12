@@ -1,4 +1,4 @@
 @echo off
 call cdk destroy --all --force
-call cdk synth
-call cdk deploy --require-approval=never
+call cdk synth PatDowdPipelineStack
+call cdk deploy PatDowdPipelineStack --require-approval=never 

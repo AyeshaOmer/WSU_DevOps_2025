@@ -24,7 +24,7 @@ class PatDowdPipelineStack(Stack):
             commands=[
                 "npm install -g aws-cdk",
                 "python -m pip install -r requirements.txt",
-                "cdk synth"
+                "cdk synth PatDowdStack"
             ],
             primary_output_directory="cdk.out"
         )

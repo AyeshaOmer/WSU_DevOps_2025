@@ -4,6 +4,7 @@ import os
 import aws_cdk as cdk
 
 from pat_dowd.pat_dowd_pipeline_stack import PatDowdPipelineStack
+from pat_dowd.pat_dowd_stack import PatDowdStack
 
 
 app = cdk.App()
@@ -24,5 +25,7 @@ PatDowdPipelineStack(app, "PatDowdPipelineStack",
 
     # For more information, see https://docs.aws.amazon.com/cdk/latest/guide/environments.html
     )
+PatDowdStack(app, "PatDowdStack",)
+
 
 app.synth()
