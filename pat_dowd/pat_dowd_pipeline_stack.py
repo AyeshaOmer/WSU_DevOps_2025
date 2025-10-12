@@ -22,44 +22,29 @@ class PatDowdPipelineStack(Stack):
             "Synth",
             input=source,
             commands=[
-                "cd PatDowd",
                 "npm install -g aws-cdk",
                 "python -m pip install -r requirements.txt",
                 "cdk synth"
             ],
-            primary_output_directory="PatDowd/cdk.out"
+            primary_output_directory="cdk.out"
         )
         
 
 
-        # Define IAM role for the pipeline
-        pipeline_role = iam.Role(
-            self,
-            "PipelineRole",
-            assumed_by=iam.ServicePrincipal("codepipeline.amazonaws.com"),
-            managed_policies=[
-                iam.ManagedPolicy.from_aws_managed_policy_name("AWSCodePipeline_FullAccess"),
-                iam.ManagedPolicy.from_aws_managed_policy_name("AWSCodeBuildDeveloperAccess"),
-                iam.ManagedPolicy.from_aws_managed_policy_name("AWSCodeCommitPowerUser"),
-                iam.ManagedPolicy.from_aws_managed_policy_name("AmazonS3FullAccess"),
-                iam.ManagedPolicy.from_aws_managed_policy_name("AWSCloudFormationFullAccess"),
-            ],
-        )
+
 
         # Create pipeline with the role
         pipeline = pipelines.CodePipeline(
             self,
             "PatPipeline",
             synth=synth,
-            role=pipeline_role,
-            self_mutation=False
         )
 
-        WHpipeline=pipelines.CodePipeline(self,"WebHealthPipeline",synth=synth)
+        #WHpipeline=pipelines.CodePipeline(self,"WebHealthPipeline",synth=synth)
 
 
-        alpha = MypipelineStage(self,'alpha')
-        WHpipeline.add_stage(alpha)
+        #alpha = MypipelineStage(self,'alpha')
+        #WHpipeline.add_stage(alpha)
 
         #         # Unit test step
         # unit_test = pipelines.ShellStep(
