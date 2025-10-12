@@ -9,4 +9,4 @@ class MypipelineStage(Stage):
     
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs) 
-        self.stage=PatDowdStack(self,"PatApplicationStack")
+        self.stage=PatDowdStack(self,"PatDowdApplcationStack")
