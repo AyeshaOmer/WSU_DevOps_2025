@@ -37,7 +37,7 @@ class PatDowdPipelineStack(Stack):
         unit_test = pipelines.ShellStep(
             "unitTest",
             commands=[
-                "npm install -g aws-cdk",
+                "source .venv/bin/activate",
                 "pip install aws-cdk-lib", 
                 "python -m pip install -r requirements.txt",
                 "pytest tests/unit/test_pat_dowd_stack.py -v",
