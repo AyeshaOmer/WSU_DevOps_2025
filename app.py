@@ -3,11 +3,11 @@ import os
 
 import aws_cdk as cdk
 
-from pat_dowd.pat_dowd_stack import PatDowdStack
+from pat_dowd.pat_dowd_pipeline_stack import PatDowdPipelineStack
 
 
 app = cdk.App()
-PatDowdStack(app, "PatDowdStack",
+PatDowdPipelineStack(app, "PatDowdPipelineStack",
     # If you don't specify 'env', this stack will be environment-agnostic.
     # Account/Region-dependent features and context lookups will not work,
     # but a single synthesized template can be deployed anywhere.

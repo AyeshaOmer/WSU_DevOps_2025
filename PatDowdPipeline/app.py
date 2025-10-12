@@ -3,7 +3,7 @@ import os
 
 import aws_cdk as cdk
 
-from pat_dowd_pipeline.pat_dowd_pipeline_stack import PatDowdPipelineStack
+from PatDowd.pat_dowd.pat_dowd_pipeline_stack import PatDowdPipelineStack
 
 
 app = cdk.App()

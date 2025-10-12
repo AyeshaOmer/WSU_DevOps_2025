@@ -52,10 +52,10 @@ class PatDowdPipelineStack(Stack):
             "PatPipeline",
             synth=synth,
             role=pipeline_role,
+            self_mutation=False
         )
 
-        WHpipeline=pipelines.CodePipeline(self,"WebHealthPipeline",
-                                              synth=synth)
+        WHpipeline=pipelines.CodePipeline(self,"WebHealthPipeline",synth=synth)
 
 
         alpha = MypipelineStage(self,'alpha')
