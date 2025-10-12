@@ -1,5 +1,6 @@
 import aws_cdk as core
 import aws_cdk.assertions as assertions
+import pytest
 
 from pat_dowd.pat_dowd_stack import PatDowdStack
 
@@ -19,4 +20,4 @@ def test_lambda():
     app = core.App()
     stack = PatDowdStack(app, "pat-dowd")
     template = assertions.Template.from_stack(stack)
-    template.resource_count_is("AWS::Lambda::Function", 3)
+    template.resource_count_is("AWS::Lambda::Function", 2)
