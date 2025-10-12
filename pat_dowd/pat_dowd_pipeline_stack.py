@@ -39,7 +39,7 @@ class PatDowdPipelineStack(Stack):
             commands=[
                 "npm install -g aws-cdk",
                 "pip install aws-cdk-lib", 
-                "python install -r requirements-dev.txt"
+                "python install -r requirements-dev.txt",
                 "pytest tests/unit/test_pat_dowd_stack.py -v",
             ],
         )
