@@ -29,10 +29,6 @@ class PatDowdPipelineStack(Stack):
             primary_output_directory="cdk.out"
         )
         
-
-
-
-
         # Create pipeline with the role
         pipeline = pipelines.CodePipeline(
             self,
@@ -40,8 +36,12 @@ class PatDowdPipelineStack(Stack):
             synth=synth,
         )
 
-        #WHpipeline=pipelines.CodePipeline(self,"WebHealthPipeline",synth=synth)
-
+        unit_test = pipelines.ShellStep("unitTest",
+            commands=[
+                "python -m pip install -r requirements-dev.txt",
+                "pytest tests/unit/test_pat_dowd_stack.py -v",                                           
+            ]               
+        )
 
         #alpha = MypipelineStage(self,'alpha')
         #WHpipeline.add_stage(alpha)

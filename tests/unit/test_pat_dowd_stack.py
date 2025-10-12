@@ -13,3 +13,10 @@ def test_sqs_queue_created():
 #     template.has_resource_properties("AWS::SQS::Queue", {
 #         "VisibilityTimeout": 300
 #     })
+
+
+def test_lambda():
+    app = core.App()
+    stack = PatDowdStack(app, "pat-dowd")
+    template = assertions.Template.from_stack(stack)
+    template.resource_count_is("AWS::Lambda::Function", 3)
