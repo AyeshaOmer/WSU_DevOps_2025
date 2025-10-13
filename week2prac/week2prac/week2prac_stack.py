@@ -22,13 +22,14 @@ class Week2PracStack(Stack):
 
         METRIC_NAMESPACE = "NYTMonitor"
 
-        # --- Paths (relative to this file) ---
         base_dir = Path(__file__).resolve().parent
         lambda_dir = str(base_dir / "lambda")
         alarm_logger_dir = str(base_dir / "lambda_alarm_logger")
         sites_file = base_dir / "lambda" / "sites.json"
 
-        # --- Lambda: site monitor ---
+        # Per-stage suffix to avoid name collisions across Beta/Gamma/Prod (and old stacks)
+        suffix = self.stack_name  # e.g., "Beta-WebHealthStack"
+
         monitor_fn = lambda_.Function(
             self,
             "MonitorNYT",
@@ -39,7 +40,6 @@ class Week2PracStack(Stack):
             environment={"METRIC_NAMESPACE": METRIC_NAMESPACE},
         )
 
-        # Allow Lambda to publish custom metrics to CloudWatch
         monitor_fn.add_to_role_policy(
             iam.PolicyStatement(
                 actions=["cloudwatch:PutMetricData"],
@@ -48,7 +48,6 @@ class Week2PracStack(Stack):
             )
         )
 
-        # Run every 5 minutes
         events.Rule(
             self,
             "MonitorSchedule",
@@ -56,39 +55,36 @@ class Week2PracStack(Stack):
             targets=[targets.LambdaFunction(monitor_fn)],
         )
 
-        # --- Load sites for dashboard & alarms (synth-time read is fine) ---
         with sites_file.open("r", encoding="utf-8") as f:
             sites = json.load(f)
 
-        # --- Dashboard ---
-        # Use the stack name to make the dashboard unique for Beta, Gamma, Prod
         dashboard = cw.Dashboard(
             self,
             "WebHealthDashboard",
-            dashboard_name=f"WebHealthDashboard-{self.stack_name}"
+            dashboard_name=f"WebHealthDashboard-{self.stack_name}",
         )
 
         widgets: list[cw.IWidget] = []
 
-        # --- SNS topic for notifications ---
-        alarm_topic = sns.Topic(self, "WebMonitorAlarmTopic", topic_name="WebMonitorAlarms")
-        # Email subscription (user must confirm email)
+        # --- Make names unique per stage ---
+        alarm_topic = sns.Topic(
+            self,
+            "WebMonitorAlarmTopic",
+            topic_name=f"WebMonitorAlarms-{suffix}",
+        )
         alarm_topic.add_subscription(subs.EmailSubscription("vrishtii.padhya@gmail.com"))
 
-        # --- DynamoDB table for alarm logging (Week 6–7) ---
         alarm_log_table = dynamodb.Table(
             self,
             "AlarmLogTable",
-            table_name="WebMonitorAlarmLogs",
+            table_name=f"WebMonitorAlarmLogs-{suffix}",
             partition_key=dynamodb.Attribute(name="alarm_name", type=dynamodb.AttributeType.STRING),
             sort_key=dynamodb.Attribute(name="timestamp", type=dynamodb.AttributeType.STRING),
             billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST,
             table_class=dynamodb.TableClass.STANDARD,
         )
-        
         alarm_log_table.apply_removal_policy(RemovalPolicy.DESTROY)
 
-        # --- Lambda: write alarm notifications to DynamoDB ---
         log_lambda = lambda_.Function(
             self,
             "AlarmLoggerLambda",
@@ -99,18 +95,14 @@ class Week2PracStack(Stack):
             environment={"TABLE_NAME": alarm_log_table.table_name},
         )
         alarm_log_table.grant_write_data(log_lambda)
-
-        # Subscribe logging Lambda to the SNS topic
         alarm_topic.add_subscription(subs.LambdaSubscription(log_lambda))
 
-        # --- Metrics, widgets, and alarms per site ---
         for site in sites:
-            # Metrics
             avail_metric = cw.Metric(
                 namespace=METRIC_NAMESPACE,
                 metric_name="Availability",
                 dimensions_map={"Site": site},
-                statistic="Average",            
+                statistic="Average",
                 period=Duration.minutes(5),
                 label=f"{site} Availability",
             )
@@ -118,22 +110,20 @@ class Week2PracStack(Stack):
                 namespace=METRIC_NAMESPACE,
                 metric_name="Latency",
                 dimensions_map={"Site": site},
-                statistic="p95",                   # 95th percentile
+                statistic="p95",
                 period=Duration.minutes(5),
-                unit=cw.Unit.MILLISECONDS,       
+                unit=cw.Unit.MILLISECONDS,
                 label=f"{site} Latency (p95 ms)",
             )
 
-            # Dashboard widgets
             widgets.append(cw.GraphWidget(title=f"Availability - {site}", left=[avail_metric], width=12, height=6))
             widgets.append(cw.GraphWidget(title=f"Latency (p95 ms) - {site}", left=[latency_metric], width=12, height=6))
 
-            # Alarms (+ SNS action)
             availability_alarm = cw.Alarm(
                 self,
                 f"AvailabilityAlarm-{site}",
                 metric=avail_metric,
-                threshold=1, 
+                threshold=1,
                 evaluation_periods=1,
                 comparison_operator=cw.ComparisonOperator.LESS_THAN_THRESHOLD,
                 alarm_description=f"Alarm if {site} becomes unavailable",
@@ -144,7 +134,7 @@ class Week2PracStack(Stack):
                 self,
                 f"LatencyAlarm-{site}",
                 metric=latency_metric,
-                threshold=2000,  
+                threshold=2000,
                 evaluation_periods=1,
                 comparison_operator=cw.ComparisonOperator.GREATER_THAN_THRESHOLD,
                 alarm_description=f"Alarm if {site} latency is too high",
