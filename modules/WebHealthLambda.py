@@ -2,7 +2,7 @@ import json
 import logging
 import urllib3
 import time
-import modules.publish_metric
+from publish_metric import publish
 import boto3
 import os
 
@@ -10,63 +10,84 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 http = urllib3.PoolManager()
 
-# Initialize DynamoDB
-
-
-
-def get_urls():
-    dynamodb = boto3.resource('dynamodb')
-    table = dynamodb.Table(os.environ['TABLE_NAME'])
-    # Get URLs from DynamoDB
-    response = table.query(
-        KeyConditionExpression='#type = :type',
-        ExpressionAttributeNames={'#type': 'type'},
-        ExpressionAttributeValues={':type': 'url'}
-    )
-    urls = [item['id'] for item in response['Items']]
-    return urls # Fallback URLs
-
-url_latency = []
-url_avail = []
-url_size=[]
 URL_MONITOR_AVAILABILITY = "Availability"
 URL_MONITOR_LATENCY = "Latency"
 URL_NAMESPACE = "WebHelperDashboard"
 URL_MONITOR_SIZE = "ResponseSize"
 
+def get_urls():
+    try:
+        dynamodb = boto3.resource('dynamodb')
+        table = dynamodb.Table(os.environ['TABLE_NAME'])
+        response = table.query(
+            KeyConditionExpression='#type = :type',
+            ExpressionAttributeNames={'#type': 'type'},
+            ExpressionAttributeValues={':type': 'url'}
+        )
+        urls = [item['id'] for item in response['Items']]
+        logger.info(f"Retrieved URLs from DynamoDB: {urls}")
+        return urls
+    except Exception as e:
+        logger.error(f"Error retrieving URLs from DynamoDB: {str(e)}")
+        return []
 
 def lambda_handler(event, context):
+    # Reset lists for each invocation
+    url_latency = []
+    url_avail = []
+    url_size = []
+    results = []
     
-    # Get URLs from DynamoDB or fallback to defaults
     urls = get_urls()
+    if not urls:
+        logger.warning("No URLs found in DynamoDB")
+        return json.dumps({"message": "No URLs to monitor"})
 
-    # Take in a url and output the status code and latency
-    for i in range(len(urls)):
+    for url in urls:
         startTime = time.time()
         try:
-            httpResponse = http.request('GET', f'https://{urls[i]}')
+            httpResponse = http.request('GET', f'https://{url}')
             endTime = time.time()
-            if httpResponse.status == 200:
-                url_avail.append(1)
-            else:
-                url_avail.append(0)
-            url_latency.append(endTime - startTime)
-            url_size.append(len(httpResponse.data)/100000)
-        except:
+            
+            availability = 1 if httpResponse.status == 200 else 0
+            latency = endTime - startTime
+            size = len(httpResponse.data)/100000
+            
+            url_avail.append(availability)
+            url_latency.append(latency)
+            url_size.append(size)
+            
+            # Publish metrics
+            publish(URL_NAMESPACE, URL_MONITOR_AVAILABILITY, url, availability)
+            publish(URL_NAMESPACE, URL_MONITOR_LATENCY, url, latency)
+            publish(URL_NAMESPACE, URL_MONITOR_SIZE, url, size)
+            
+            results.append({
+                "url": url,
+                "availability": availability,
+                "latency": latency,
+                "size": size
+            })
+            
+        except Exception as e:
+            logger.error(f"Error monitoring URL {url}: {str(e)}")
             url_avail.append(0)
             url_latency.append(0)
             url_size.append(0)
-            logger.error(f"Failed to fetch {urls[i]}")
-        
-        #data being published
-        publish_metric.publish(URL_NAMESPACE, URL_MONITOR_AVAILABILITY, urls[i], url_avail[i])
-        publish_metric.publish(URL_NAMESPACE, URL_MONITOR_LATENCY, urls[i], url_latency[i])
-        publish_metric.publish(URL_NAMESPACE, URL_MONITOR_SIZE, urls[i], url_size[i])
-        data = {"url": urls[i], "body": url_avail[i], "latency": url_latency[i]}
+            
+            publish(URL_NAMESPACE, URL_MONITOR_AVAILABILITY, url, 0)
+            publish(URL_NAMESPACE, URL_MONITOR_LATENCY, url, 0)
+            publish(URL_NAMESPACE, URL_MONITOR_SIZE, url, 0)
+            
+            results.append({
+                "url": url,
+                "availability": 0,
+                "latency": 0,
+                "size": 0,
+                "error": str(e)
+            })
 
-        
-    #logger.info(f"CloudWatch logs group: {context.log_group_name}")
-
-
-    # return the calculated area as a JSON string
-    return json.dumps(data)
+    return json.dumps({
+        "timestamp": time.time(),
+        "results": results
+    })
