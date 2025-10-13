@@ -4,7 +4,7 @@ import os
 from urllib.parse import unquote
 
 dynamodb = boto3.resource('dynamodb')
-table = dynamodb.Table(os.environ['URL_TABLE_NAME'])
+table = dynamodb.Table(os.environ['TABLE_NAME'])
 
 
 
