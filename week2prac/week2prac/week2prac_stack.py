@@ -66,7 +66,7 @@ class Week2PracStack(Stack):
         dashboard = cw.Dashboard(
             self,
             f"WebHealthDashboard-{stage_suffix}",
-            dashboard_name=f"WebHealthDashboard-{stage_suffix}"
+            dashboard_name=f"WebHealthDashboard-{stage_suffix}",
             removal_policy=RemovalPolicy.DESTROY
         )
 
