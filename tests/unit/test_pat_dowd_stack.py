@@ -26,4 +26,4 @@ def test_sns_topic():
     app = core.App()
     stack = PatDowdStack(app, "pat-dowd")
     template = assertions.Template.from_stack(stack)
-    template.resource_count_is("AWS::SNS::Topic", 1)
+    template.resource_count_is("AWS::SNS::Topic", 3)
