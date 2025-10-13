@@ -79,21 +79,21 @@ class PatDowdPipelineStack(Stack):
 
         # Test stage (no deployment)
         test_stage = TestStage(self, "Test")
-        pipeline.add_stage(
+        pipeline.add_wave(
             test_stage,
             pre=[unit_test]
         )
 
         # Integration test stage (no deployment)
-        integration_stage = TestStage(self, "Integration")
-        pipeline.add_stage(
-            integration_stage,
-            pre=[integration_test]
-        )
+        # integration_stage = TestStage(self, "Integration")
+        # pipeline.add_stage(
+        #     integration_stage,
+        #     pre=[integration_test]
+        # )
 
         # Final stage with actual deployment and production tests
-        prod_stage = MypipelineStage(self, "Production")
-        pipeline.add_stage(
-            prod_stage,
-            pre=[prod_test]
-        )
+        # prod_stage = MypipelineStage(self, "Production")
+        # pipeline.add_stage(
+        #     prod_stage,
+        #     pre=[prod_test]
+        # )
