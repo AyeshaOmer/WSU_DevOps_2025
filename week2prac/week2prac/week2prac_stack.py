@@ -66,9 +66,12 @@ class Week2PracStack(Stack):
         dashboard = cw.Dashboard(
             self,
             f"WebHealthDashboard-{stage_suffix}",
-            dashboard_name=f"WebHealthDashboard-{stage_suffix}",
-            removal_policy=RemovalPolicy.DESTROY
+            dashboard_name=f"WebHealthDashboard-{stage_suffix}"
         )
+
+        # Set removal policy (done via method, not constructor)
+        dashboard.apply_removal_policy(RemovalPolicy.DESTROY)
+
 
         widgets: list[cw.IWidget] = []
 
