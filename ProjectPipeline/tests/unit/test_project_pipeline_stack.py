@@ -3,11 +3,12 @@ import pytest
 from aws_cdk import assertions, App
 from modules import constants
 from project_pipeline.project_pipeline_stack import ProjectPipelineStack
+from project_pipeline.eugene_stack import EugeneStack
 
 @pytest.fixture
 def get_stack():
     app = App()
-    stack = ProjectPipelineStack(app, "project-pipeline")
+    stack = EugeneStack(app, "eugene-stack")
     # template = assertions.Template.from_stack(get_stack)
     return stack
 
@@ -23,7 +24,7 @@ def test_sqs_queue_created():
 #     template.has_resource_properties("AWS::SQS::Queue", {
 #         "VisibilityTimeout": 300
 #     })
-
+'''
 
 def test_sqs_queue_created(get_stack):
     template = assertions.Template.from_stack(get_stack) # template is an instance of the applicatiopn stack (like a new tab on google)
@@ -31,7 +32,7 @@ def test_sqs_queue_created(get_stack):
 #     template.has_resource_properties("AWS::SQS::Queue", {
 #         "VisibilityTimeout": 300
 #     })
-'''
+
 # Unit Test 1: Lambdas exists
 def test_lambda_count(get_stack):
     template = assertions.Template.from_stack(get_stack) # template is an instance of the applicatiopn stack (like a new tab on google)
@@ -44,7 +45,7 @@ def test_lambda_count(get_stack):
 def test_alarm_count(get_stack):
     template = assertions.Template.from_stack(get_stack)
     # 3 alarms per URL
-    expected_alarm_count = len(constants.MONITORED_URLS) * 3
+    expected_alarm_count = len(constants.MONITORED_URLS) * 4
     template.resource_count_is("AWS::CloudWatch::Alarm", expected_alarm_count)
 
 # Unit Test 3: Test alarm thresholds
