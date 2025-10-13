@@ -2,7 +2,6 @@ from aws_cdk import (
     Stack,
     Environment,
     pipelines as pipelines,
-    aws_iam as iam,
 )
 from constructs import Construct
 from .app_stage import AppStage
@@ -29,20 +28,20 @@ class WebMonitorPipelineStack(Stack):
             connection_arn=codestar_connection_arn,
         )
 
-        # --- Synth (cd into 'week2prac', run app at repo root) ---
+        # --- Synth step ---
+        # Your app.py and cdk.json are in the *outer* week2prac/
         synth_step = pipelines.ShellStep(
             "Synth",
             input=source,
             install_commands=[
                 "npm install -g aws-cdk",
                 "python -m pip install --upgrade pip",
-                "python -m pip install -r week2prac/requirements.txt",
+                "python -m pip install -r requirements.txt",   # outer file
             ],
             commands=[
-                "cd week2prac",
-                "cdk synth --app 'python ../app.py'",
+                "cdk synth --app 'python app.py'",            # run from root
             ],
-            primary_output_directory="week2prac/cdk.out",
+            primary_output_directory="cdk.out",
         )
 
         pipeline = pipelines.CodePipeline(
@@ -50,24 +49,6 @@ class WebMonitorPipelineStack(Stack):
             "WebMonitorPipeline",
             pipeline_name="WebMonitorMultiStagePipeline",
             synth=synth_step,
-        )
-
-        # --- Grant the pipeline role permission to use the CodeStar Connection ---
-        # Some CDK versions expose 'pipeline.pipeline.role', others 'pipeline.code_pipeline.role'.
-        pipe_role = getattr(pipeline, "pipeline", None)
-        if pipe_role is not None:
-            pipe_role = pipeline.pipeline.role
-        else:
-            pipe_role = pipeline.code_pipeline.role
-
-        pipe_role.add_to_policy(
-            iam.PolicyStatement(
-                actions=[
-                    "codestar-connections:UseConnection",
-                    "codestar-connections:GetConnection",
-                ],
-                resources=[codestar_connection_arn],
-            )
         )
 
         stage_env = Environment(region=deploy_region)
