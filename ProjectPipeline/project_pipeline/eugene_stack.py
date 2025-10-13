@@ -133,11 +133,23 @@ class EugeneStack(Stack):
         )
 
          # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_codedeploy/LambdaDeploymentGroup.html
+        '''
         deployment_group = codedeploy.LambdaDeploymentGroup(self, "BlueGreenDeployment",
             alias=alias, # alias shifts traffic to the previous version of the lambda
             deployment_config=codedeploy.LambdaDeploymentConfig.CANARY_10_PERCENT_5_MINUTES,
             alarms=[invoc_alarm, memory_alarm, duration_alarm]
         )
+        '''
+        deployment_group = codedeploy.LambdaDeploymentGroup(self, "BlueGreenDeployment",
+            alias=alias,
+            deployment_config=codedeploy.LambdaDeploymentConfig.CANARY_10_PERCENT_5_MINUTES,
+            alarms=[invoc_alarm, memory_alarm, duration_alarm],
+            auto_rollback=codedeploy.AutoRollbackConfig(
+                failed_deployment=True,
+                deployment_in_alarm=True
+            )
+        )
+
 
         # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_cloudwatch/Metric.html
         ''' # Create metric for lambda - ignore invocmetric = cloudwatch.Metric(, it is bellow it ath is the metric for lambda
