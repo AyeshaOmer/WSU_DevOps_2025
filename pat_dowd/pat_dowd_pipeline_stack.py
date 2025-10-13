@@ -10,7 +10,7 @@ from pat_dowd.pipeline_Stage import MypipelineStage
 class PatDowdPipelineStack(Stack):
     def __init__(self, scope: Construct, construct_id: str, **kwargs):
         super().__init__(scope, construct_id, **kwargs)
-        #please oh god
+
         source = pipelines.CodePipelineSource.connection(
             "prinpa/WSU_DEVOPS_2025",
             "refactor",
@@ -41,7 +41,7 @@ class PatDowdPipelineStack(Stack):
             commands=[
                 "python -m pip install aws-cdk-lib", 
                 "python -m pip install -r requirements-dev.txt",
-                "pytest tests/unit/ -v",  # Run all unit tests
+                "pytest tests/unit/ -v",
             ],
         )
         
@@ -50,23 +50,15 @@ class PatDowdPipelineStack(Stack):
             commands=[
                 "python -m pip install aws-cdk-lib", 
                 "python -m pip install -r requirements-dev.txt",
-                "pytest tests/integration/ -v",  # Run integration tests
-            ],
-        )
-        
-        prod_test = pipelines.ShellStep(
-            "ProductionTests",
-            commands=[
-                "python -m pip install aws-cdk-lib", 
-                "python -m pip install -r requirements-dev.txt",
-                "pytest tests/e2e/ -v",  # Run end-to-end tests
+                "pytest tests/integration/ -v",
             ],
         )
 
 
         # Test stage (no deployment)
         pipeline.add_wave(
-            id="unit_test",pre=[unit_test]
+            id="unit_test",
+            pre=[unit_test]
         )
 
         # Integration test stage (no deployment)
@@ -79,5 +71,4 @@ class PatDowdPipelineStack(Stack):
         prod_stage = MypipelineStage(self, "Production")
         pipeline.add_stage(
             prod_stage,
-            #pre=[prod_test]
         )

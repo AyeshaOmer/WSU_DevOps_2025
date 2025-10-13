@@ -25,3 +25,56 @@ python -m pip install -r requirements.txt
 Now that the project has been installed, its ready to run. THis can be done by using `cdk synth` then `cdk deploy`
 
 And once you're done, use `cdk destroy` to stop every
+
+## API documentation
+
+The API provides endpoints to manage URLs in the database. The following endpoints are available:
+
+### GET /urls
+
+Fetches all stored URLs.
+
+**Request:**
+```
+GET /urls
+```
+
+**Response:**
+- 200 OK: Returns a JSON array of URLs.
+
+---
+
+### POST /urls
+
+Adds a new URL to the database.
+
+**Request:**
+```
+POST /urls
+Content-Type: application/json
+```
+**Body Example:**
+```json
+{
+  "url": "https://example.com"
+}
+```
+
+**Response:**
+- 201 Created: Returns a message confirming the URL was added.
+
+---
+
+### DELETE /urls/{url}
+
+Removes a URL from the database.
+
+**Request:**
+```
+DELETE /urls/{url}
+```
+
+**Response:**
+- 200 OK: Returns a message confirming the URL was deleted.
+
+---

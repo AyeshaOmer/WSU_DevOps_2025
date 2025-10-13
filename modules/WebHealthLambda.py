@@ -32,7 +32,6 @@ def get_urls():
         return []
 
 def lambda_handler(event, context):
-    # Reset lists for each invocation
     url_latency = []
     url_avail = []
     url_size = []
@@ -44,8 +43,8 @@ def lambda_handler(event, context):
         return json.dumps({"message": "No URLs to monitor"})
 
     for url in urls:
-        startTime = time.time()
         try:
+            startTime = time.time()
             httpResponse = http.request('GET', f'https://{url}')
             endTime = time.time()
             

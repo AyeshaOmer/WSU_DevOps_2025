@@ -10,8 +10,8 @@ http = urllib3.PoolManager()
 API_ENDPOINT = "https://gyefqsoe42.execute-api.ap-southeast-2.amazonaws.com/prod/urls"
 TEST_URL = "www.example.com"
 
+# tests for no url
 def test_initial_empty_urls():
-    """Test that initially there are no URLs in the system"""
     response = http.request('GET', API_ENDPOINT)
     assert response.status == 200
     data = response.json()
