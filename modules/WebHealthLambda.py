@@ -11,10 +11,12 @@ logger.setLevel(logging.INFO)
 http = urllib3.PoolManager()
 
 # Initialize DynamoDB
-dynamodb = boto3.resource('dynamodb')
-table = dynamodb.Table(os.environ['URL_TABLE_NAME'])
+
+
 
 def get_urls():
+    dynamodb = boto3.resource('dynamodb')
+    table = dynamodb.Table(os.environ['TABLE_NAME'])
     # Get URLs from DynamoDB
     response = table.query(
         KeyConditionExpression='#type = :type',
@@ -37,7 +39,7 @@ def lambda_handler(event, context):
     
     # Get URLs from DynamoDB or fallback to defaults
     urls = get_urls()
-    
+
     # Take in a url and output the status code and latency
     for i in range(len(urls)):
         startTime = time.time()

@@ -89,7 +89,7 @@ class PatDowdStack(Stack):
             code=_lambda.Code.from_asset("modules"),
             timeout=Duration.seconds(30),
             environment={
-                "URL_TABLE_NAME": url_table.table_name
+                "TABLE_NAME": url_table.table_name
             },
         )
 
