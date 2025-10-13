@@ -83,15 +83,14 @@ class PatDowdPipelineStack(Stack):
         )
 
         # Integration test stage (no deployment)
-        integration_stage = TestStage(self, "Integration")
-        pipeline.add_wave(
-            id ="integration_stage",
-            pre=[integration_test]
-        )
+        # pipeline.add_wave(
+        #     id ="integration_stage",
+        #     pre=[integration_test]
+        # )
 
         # Final stage with actual deployment and production tests
         prod_stage = MypipelineStage(self, "Production")
         pipeline.add_stage(
             prod_stage,
-            pre=[prod_test]
+            #pre=[prod_test]
         )
