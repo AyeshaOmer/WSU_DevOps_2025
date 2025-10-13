@@ -6,7 +6,8 @@ from dang_quoc_toan.dang_quoc_toan_stack import DangQuocToanStack
 
 
 def synth_template():
-    app = core.App()
+    # Force-enable CodeDeploy in tests so we can assert its presence
+    app = core.App(context={"enable_code_deploy": "true"})
     stack = DangQuocToanStack(app, "TestStack")
     return Template.from_stack(stack)
 

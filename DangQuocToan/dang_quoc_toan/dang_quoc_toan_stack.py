@@ -334,26 +334,28 @@ class DangQuocToanStack(Stack):
             ],
         )
 
-        #--- 9. CodeDeploy application + deployment group to enable canary and automatic rollback
-        # Create application explicitly so we can set a retain policy (prevents delete failures)
-        cd_app = codedeploy.LambdaApplication(self, "WHDeploymentApp")
-        cd_app.apply_removal_policy(RemovalPolicy.RETAIN)
+        #--- 9. CodeDeploy application + deployment group (Prod-only by default)
+        enable_cd_ctx = self.node.try_get_context("enable_code_deploy")
+        is_prod_stack = "prod" in self.stack_name.lower()
+        if (isinstance(enable_cd_ctx, str) and enable_cd_ctx.lower() in ("1", "true", "yes")) or is_prod_stack:
+            cd_app = codedeploy.LambdaApplication(self, "WHDeploymentApp")
+            cd_app.apply_removal_policy(RemovalPolicy.RETAIN)
 
-        dg = codedeploy.LambdaDeploymentGroup(
-            self,
-            "WHDeploymentGroup",
-            alias=alias,
-            application=cd_app,
-            deployment_config=codedeploy.LambdaDeploymentConfig.CANARY_10_PERCENT_5_MINUTES,
-            alarms=[errors_alarm, throttles_alarm, duration_alarm],  # key health signals
-            auto_rollback=codedeploy.AutoRollbackConfig(
-                deployment_in_alarm=True,
-                failed_deployment=True,
-                stopped_deployment=True,
-            ),
-        )
-        # Retain the deployment group on stack delete/rollback to avoid service subscription delete errors
-        dg.apply_removal_policy(RemovalPolicy.RETAIN)
+            dg = codedeploy.LambdaDeploymentGroup(
+                self,
+                "WHDeploymentGroup",
+                alias=alias,
+                application=cd_app,
+                deployment_config=codedeploy.LambdaDeploymentConfig.CANARY_10_PERCENT_5_MINUTES,
+                alarms=[errors_alarm, throttles_alarm, duration_alarm],  # key health signals
+                auto_rollback=codedeploy.AutoRollbackConfig(
+                    deployment_in_alarm=True,
+                    failed_deployment=True,
+                    stopped_deployment=True,
+                ),
+            )
+            # Retain on delete to avoid subscription/delete failures in some accounts
+            dg.apply_removal_policy(RemovalPolicy.RETAIN)
 
         # Helper for ID-safe names (CDK IDs must avoid problematic chars)
     def _sanitize_id(self, url: str) -> str:
