@@ -334,11 +334,16 @@ class DangQuocToanStack(Stack):
             ],
         )
 
-        #--- 9. CodeDeploy deployment group to enable canary and automatic rollback
-        codedeploy.LambdaDeploymentGroup(
+        #--- 9. CodeDeploy application + deployment group to enable canary and automatic rollback
+        # Create application explicitly so we can set a retain policy (prevents delete failures)
+        cd_app = codedeploy.LambdaApplication(self, "WHDeploymentApp")
+        cd_app.apply_removal_policy(RemovalPolicy.RETAIN)
+
+        dg = codedeploy.LambdaDeploymentGroup(
             self,
             "WHDeploymentGroup",
             alias=alias,
+            application=cd_app,
             deployment_config=codedeploy.LambdaDeploymentConfig.CANARY_10_PERCENT_5_MINUTES,
             alarms=[errors_alarm, throttles_alarm, duration_alarm],  # key health signals
             auto_rollback=codedeploy.AutoRollbackConfig(
@@ -347,6 +352,8 @@ class DangQuocToanStack(Stack):
                 stopped_deployment=True,
             ),
         )
+        # Retain the deployment group on stack delete/rollback to avoid service subscription delete errors
+        dg.apply_removal_policy(RemovalPolicy.RETAIN)
 
         # Helper for ID-safe names (CDK IDs must avoid problematic chars)
     def _sanitize_id(self, url: str) -> str:
