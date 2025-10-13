@@ -1,0 +1,46 @@
+digraph G {
+  # Arrows represent an "unlocks" relationship (opposite of dependency). So chosen
+  # because the layout looks more natural that way.
+  # To represent subgraph dependencies, subgraphs are represented by BEGIN/END nodes.
+  # To render: `dot -Tsvg PatDowdPipelineStackPatPipeline64BAE7E7.dot > graph.svg`, open in a browser.
+  node [shape="box"];
+"BEGIN Build" [shape="cds", style="filled", fillcolor="#b7deff"];
+"END Build" [shape="cds", style="filled", fillcolor="#b7deff"];
+"Build.Synth";
+"Source.prinpa/WSU_DEVOPS_2025" -> "Build.Synth";
+"BEGIN Build" -> "Build.Synth";
+"Build.Synth" -> "END Build";
+"BEGIN UpdatePipeline" [shape="cds", style="filled", fillcolor="#b7deff"];
+"END UpdatePipeline" [shape="cds", style="filled", fillcolor="#b7deff"];
+"UpdatePipeline.SelfMutate";
+"Build.Synth" -> "UpdatePipeline.SelfMutate";
+"BEGIN UpdatePipeline" -> "UpdatePipeline.SelfMutate";
+"UpdatePipeline.SelfMutate" -> "END UpdatePipeline";
+"BEGIN Assets" [shape="cds", style="filled", fillcolor="#b7deff"];
+"END Assets" [shape="cds", style="filled", fillcolor="#b7deff"];
+"Assets.FileAsset1";
+"UpdatePipeline.SelfMutate" -> "Assets.FileAsset1";
+"BEGIN Assets" -> "Assets.FileAsset1";
+"Assets.FileAsset1" -> "END Assets";
+"BEGIN Alpha" [shape="cds", style="filled", fillcolor="#b7deff"];
+"END Alpha" [shape="cds", style="filled", fillcolor="#b7deff"];
+"UpdatePipeline.SelfMutate" -> "BEGIN Alpha";
+"BEGIN Alpha.PatDowdApplcationStack" [shape="cds", style="filled", fillcolor="#b7deff"];
+"END Alpha.PatDowdApplcationStack" [shape="cds", style="filled", fillcolor="#b7deff"];
+"Alpha.unitTest" -> "BEGIN Alpha.PatDowdApplcationStack";
+"Alpha.PatDowdApplcationStack.Deploy";
+"Alpha.PatDowdApplcationStack.Prepare" -> "Alpha.PatDowdApplcationStack.Deploy";
+"Alpha.PatDowdApplcationStack.Prepare";
+"Build.Synth" -> "Alpha.PatDowdApplcationStack.Prepare";
+"Assets.FileAsset1" -> "Alpha.PatDowdApplcationStack.Prepare";
+"BEGIN Alpha.PatDowdApplcationStack" -> "Alpha.PatDowdApplcationStack.Prepare";
+"Alpha.PatDowdApplcationStack.Deploy" -> "END Alpha.PatDowdApplcationStack";
+"Alpha.unitTest";
+"BEGIN Alpha" -> "Alpha.unitTest";
+"END Alpha.PatDowdApplcationStack" -> "END Alpha";
+"BEGIN Source" [shape="cds", style="filled", fillcolor="#b7deff"];
+"END Source" [shape="cds", style="filled", fillcolor="#b7deff"];
+"Source.prinpa/WSU_DEVOPS_2025";
+"BEGIN Source" -> "Source.prinpa/WSU_DEVOPS_2025";
+"Source.prinpa/WSU_DEVOPS_2025" -> "END Source";
+}

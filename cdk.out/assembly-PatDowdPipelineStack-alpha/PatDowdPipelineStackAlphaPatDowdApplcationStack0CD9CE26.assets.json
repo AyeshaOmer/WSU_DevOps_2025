@@ -1,0 +1,34 @@
+{
+  "version": "48.0.0",
+  "files": {
+    "bd7c945da3b8e78d04fe6677d26d03472fcd091dbb629f12ee8be7c2477d4144": {
+      "displayName": "WebHelperFunction/Code",
+      "source": {
+        "path": "..\\asset.bd7c945da3b8e78d04fe6677d26d03472fcd091dbb629f12ee8be7c2477d4144",
+        "packaging": "zip"
+      },
+      "destinations": {
+        "current_account-current_region-1312a5cd": {
+          "bucketName": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}",
+          "objectKey": "bd7c945da3b8e78d04fe6677d26d03472fcd091dbb629f12ee8be7c2477d4144.zip",
+          "assumeRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-file-publishing-role-${AWS::AccountId}-${AWS::Region}"
+        }
+      }
+    },
+    "9fbcb834605d2aaf8e710ba3e5329e149b7ff71685073bd2628cdbcf1d8059b2": {
+      "displayName": "Alpha-PatDowdApplcationStack Template",
+      "source": {
+        "path": "PatDowdPipelineStackAlphaPatDowdApplcationStack0CD9CE26.template.json",
+        "packaging": "file"
+      },
+      "destinations": {
+        "current_account-current_region-3a3d2309": {
+          "bucketName": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}",
+          "objectKey": "9fbcb834605d2aaf8e710ba3e5329e149b7ff71685073bd2628cdbcf1d8059b2.json",
+          "assumeRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-file-publishing-role-${AWS::AccountId}-${AWS::Region}"
+        }
+      }
+    }
+  },
+  "dockerImages": {}
+}
