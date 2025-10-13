@@ -2,9 +2,23 @@ from aws_cdk import (
     Stack,
     pipelines as pipelines,
     aws_iam as iam,
+    Stage
 )
 from constructs import Construct
 from pat_dowd.pipeline_Stage import MypipelineStage
+
+
+class EmptyStack(Stack):
+    """An empty stack that doesn't deploy any resources"""
+    def __init__(self, scope: Construct, construct_id: str, **kwargs):
+        super().__init__(scope, construct_id, **kwargs)
+        # Empty stack, no resources
+
+class TestStage(Stage):
+    """A stage that contains an empty stack, just for testing"""
+    def __init__(self, scope: Construct, construct_id: str, **kwargs):
+        super().__init__(scope, construct_id, **kwargs)
+        EmptyStack(self, "EmptyStack")
 
 class PatDowdPipelineStack(Stack):
     def __init__(self, scope: Construct, construct_id: str, **kwargs):
@@ -36,50 +50,48 @@ class PatDowdPipelineStack(Stack):
 
         # Optional: add pre-deployment tests
         unit_test = pipelines.ShellStep(
-            "unitTest",
+            "UnitTests",
             commands=[
                 "python -m pip install aws-cdk-lib", 
                 "python -m pip install -r requirements-dev.txt",
-                "pytest tests/unit/test_pat_dowd_stack.py -v",
+                "pytest tests/unit/ -v",  # Run all unit tests
             ],
         )
+        
         integration_test = pipelines.ShellStep(
-            "intergration",
+            "IntegrationTests",
             commands=[
                 "python -m pip install aws-cdk-lib", 
                 "python -m pip install -r requirements-dev.txt",
-                "pytest tests/unit/test_pat_dowd_stack.py -v",
+                "pytest tests/integration/ -v",  # Run integration tests
             ],
         )
+        
         prod_test = pipelines.ShellStep(
-            "prod",
+            "ProductionTests",
             commands=[
                 "python -m pip install aws-cdk-lib", 
                 "python -m pip install -r requirements-dev.txt",
-                "pytest tests/unit/test_pat_dowd_stack.py -v",
+                "pytest tests/e2e/ -v",  # Run end-to-end tests
             ],
         )
 
-        # Add the 'alpha' (application) stage
-        alpha_stage = MypipelineStage(self, "Alpha")
-        beta_stage = MypipelineStage(self, "beta")
-        prod_stage = MypipelineStage(self, "prod")
 
-
-                # Test stage (no deployment)
+        # Test stage (no deployment)
+        test_stage = TestStage(self, "Test")
         pipeline.add_stage(
-            "TestStage",
+            test_stage,
             pre=[unit_test]
         )
 
-        # Beta stage with integration tests
-        beta_stage = MypipelineStage(self, "Beta")
+        # Integration test stage (no deployment)
+        integration_stage = TestStage(self, "Integration")
         pipeline.add_stage(
-            beta_stage,
+            integration_stage,
             pre=[integration_test]
         )
 
-        # Production stage with final tests
+        # Final stage with actual deployment and production tests
         prod_stage = MypipelineStage(self, "Production")
         pipeline.add_stage(
             prod_stage,
