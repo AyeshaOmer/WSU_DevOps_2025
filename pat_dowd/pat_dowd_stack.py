@@ -29,7 +29,13 @@ class PatDowdStack(Stack):
             handler="WebHealthLambda.lambda_handler",
             code=_lambda.Code.from_asset("modules"),
             timeout=Duration.seconds(30),
+            environment={
+                "TABLE_NAME": alarm_table.table_name
+            }
         )
+        
+        # Grant DynamoDB read permissions to the WebHealth Lambda
+        alarm_table.grant_read_data(fn)
         #cadence definition
         
         rule = events.Rule(
@@ -46,16 +52,16 @@ class PatDowdStack(Stack):
         )
 
         # create dashboard
-        # Create DynamoDB table for alarm logging
+        # Create DynamoDB table for alarm logging and URL storage
         alarm_table = dynamodb.Table(
             self,
             "AlarmLogsTable",
             partition_key=dynamodb.Attribute(
-                name="id",
-                type=dynamodb.AttributeType.STRING
+                name="type",
+                type=dynamodb.AttributeType.STRING  # 'alarm' or 'url'
             ),
             sort_key=dynamodb.Attribute(
-                name="timestamp",
+                name="id",  # timestamp for alarms, url for urls
                 type=dynamodb.AttributeType.STRING
             ),
             billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST,
@@ -77,6 +83,51 @@ class PatDowdStack(Stack):
 
         # Grant DynamoDB permissions to the Lambda function
         alarm_table.grant_write_data(alarm_logger)
+
+        # Create Lambda function for URL management
+        url_manager = _lambda.Function(
+            self,
+            "UrlManagerFunction",
+            runtime=_lambda.Runtime.PYTHON_3_13,
+            handler="url_manager.lambda_handler",
+            code=_lambda.Code.from_asset("modules"),
+            timeout=Duration.seconds(30),
+            environment={
+                "TABLE_NAME": alarm_table.table_name
+            }
+        )
+
+        # Grant DynamoDB permissions to the URL manager Lambda
+        alarm_table.grant_read_write_data(url_manager)
+
+        # Create API Gateway
+        api = apigw.RestApi(
+            self,
+            "WebHealthApi",
+            rest_api_name="Web Health Monitor API",
+            description="API for managing monitored URLs"
+        )
+
+        # Create URLs resource and methods
+        urls = api.root.add_resource("urls")
+        urls.add_method(
+            "GET",
+            apigw.LambdaIntegration(url_manager),
+            authorization_type=apigw.AuthorizationType.NONE
+        )
+        urls.add_method(
+            "POST",
+            apigw.LambdaIntegration(url_manager),
+            authorization_type=apigw.AuthorizationType.NONE
+        )
+
+        # Create single URL resource for DELETE operations
+        url = urls.add_resource("{url}")
+        url.add_method(
+            "DELETE",
+            apigw.LambdaIntegration(url_manager),
+            authorization_type=apigw.AuthorizationType.NONE
+        )
 
         dashboard = cw.Dashboard(self, "Dash",
             default_interval=Duration.days(7),
