@@ -52,4 +52,43 @@ def test_alarm_count_matches_urls():
 
     template = synth_template()
     alarms = template.find_resources("AWS::CloudWatch::Alarm")
-    assert len(alarms) == len(website_list) * 3
+    # Count only per-URL alarms (availability/latency/status). In CFN, per-metric
+    # alarms appear under Properties.Metrics[0].MetricStat.Metric.MetricName.
+    target_names = {"availability", "latency", "status"}
+    count = 0
+    for _, alarm in alarms.items():
+        props = alarm.get("Properties", {})
+        names = []
+        if "Metrics" in props:
+            for m in props["Metrics"]:
+                metric_stat = m.get("MetricStat") if isinstance(m, dict) else None
+                metric = metric_stat.get("Metric") if isinstance(metric_stat, dict) else None
+                name = metric.get("MetricName") if isinstance(metric, dict) else None
+                if name:
+                    names.append(name)
+        else:
+            # Fallback: direct MetricName property (older patterns)
+            if "MetricName" in props:
+                names.append(props["MetricName"])
+
+        if any(n in target_names for n in names):
+            count += 1
+    assert count == len(website_list) * 3
+
+
+def test_lambda_alias_and_codedeploy():
+    template = synth_template()
+    # Alias exists with name 'live'
+    template.has_resource_properties(
+        "AWS::Lambda::Alias",
+        {
+            "Name": "live",
+        },
+    )
+    # CodeDeploy DeploymentGroup exists with canary config
+    template.has_resource_properties(
+        "AWS::CodeDeploy::DeploymentGroup",
+        {
+            "DeploymentConfigName": "CodeDeployDefault.LambdaCanary10Percent5Minutes",
+        },
+    )

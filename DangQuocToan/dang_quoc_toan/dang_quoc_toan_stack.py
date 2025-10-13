@@ -10,7 +10,8 @@ from aws_cdk import (
     aws_sns as sns,
     aws_sns_subscriptions as subs,
     aws_cloudwatch as cloudwatch,
-    aws_cloudwatch_actions as cw_actions
+    aws_cloudwatch_actions as cw_actions,
+    aws_codedeploy as codedeploy,
 )
 from constructs import Construct
 import os, json, re
@@ -57,15 +58,19 @@ class DangQuocToanStack(Stack):
             iam.ManagedPolicy.from_aws_managed_policy_name("service-role/AWSLambdaBasicExecutionRole")
         )
         
+        # Publish a version + alias for CodeDeploy traffic shifting
+        version = fn.current_version
+        alias = _lambda.Alias(self, "WHAlias", alias_name="live", version=version)
+
         # Schedule for scheduled events rules
         # Reference: AWS CDK Python – aws_events.Rule
         # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_events/README.html#rule
         schedule= events_.Schedule.rate(Duration.minutes(5))   # Reference: aws_events.Schedule.rate
 
-        # Create the event target
+        # Create the event target (invoke the alias so deployments shift traffic gradually)
         # Reference: AWS CDK Python – aws_events_targets.LambdaFunction
         # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_events_targets/README.html#lambdafunction
-        target = targets_.LambdaFunction(fn)
+        target = targets_.LambdaFunction(alias)
         
         # AWS evetns_.Rule
         events_.Rule (
@@ -133,7 +138,76 @@ class DangQuocToanStack(Stack):
         topic.add_subscription(subs.LambdaSubscription(log_lambda))
 
 
-        #--- 6. Create CloudWatch metrics with dimension for each URL
+        #--- 6. Operational alarms for the crawler Lambda (errors, throttles, duration, invocations, memory)
+        errors_alarm = cloudwatch.Alarm(
+            self, "LambdaErrorsAlarm",
+            metric=fn.metric_errors(period=Duration.minutes(5), statistic="sum"),
+            threshold=0,
+            evaluation_periods=1,
+            datapoints_to_alarm=1,
+            comparison_operator=cloudwatch.ComparisonOperator.GREATER_THAN_THRESHOLD,
+            treat_missing_data=cloudwatch.TreatMissingData.BREACHING,
+            alarm_description="Lambda errors > 0"
+        )
+
+        throttles_alarm = cloudwatch.Alarm(
+            self, "LambdaThrottlesAlarm",
+            metric=fn.metric_throttles(period=Duration.minutes(5), statistic="sum"),
+            threshold=0,
+            evaluation_periods=1,
+            datapoints_to_alarm=1,
+            comparison_operator=cloudwatch.ComparisonOperator.GREATER_THAN_THRESHOLD,
+            treat_missing_data=cloudwatch.TreatMissingData.BREACHING,
+            alarm_description="Lambda throttles > 0"
+        )
+
+        duration_alarm = cloudwatch.Alarm(
+            self, "LambdaDurationP99Alarm",
+            metric=fn.metric_duration(period=Duration.minutes(5), statistic="p99"),
+            threshold=5000,  # ms
+            evaluation_periods=1,
+            datapoints_to_alarm=1,
+            comparison_operator=cloudwatch.ComparisonOperator.GREATER_THAN_THRESHOLD,
+            treat_missing_data=cloudwatch.TreatMissingData.BREACHING,
+            alarm_description="Lambda p99 duration > 5s"
+        )
+
+        invocations_low_alarm = cloudwatch.Alarm(
+            self, "LambdaInvocationsLowAlarm",
+            metric=fn.metric_invocations(period=Duration.minutes(5), statistic="sum"),
+            threshold=1,
+            evaluation_periods=1,
+            datapoints_to_alarm=1,
+            comparison_operator=cloudwatch.ComparisonOperator.LESS_THAN_THRESHOLD,
+            treat_missing_data=cloudwatch.TreatMissingData.BREACHING,
+            alarm_description="Lambda invocations < 1 in 5m"
+        )
+
+        # Memory: MaxMemoryUsed is available via CloudWatch for many accounts.
+        # If missing, alarm treats missing data as NOT_BREACHING.
+        memory_metric = cloudwatch.Metric(
+            namespace="AWS/Lambda",
+            metric_name="MaxMemoryUsed",
+            dimensions_map={"FunctionName": fn.function_name},
+            period=Duration.minutes(5),
+            statistic="max",
+        )
+        memory_alarm = cloudwatch.Alarm(
+            self, "LambdaMemoryAlarm",
+            metric=memory_metric,
+            threshold=120,  # MB (approx for default 128MB)
+            evaluation_periods=1,
+            datapoints_to_alarm=1,
+            comparison_operator=cloudwatch.ComparisonOperator.GREATER_THAN_THRESHOLD,
+            treat_missing_data=cloudwatch.TreatMissingData.NOT_BREACHING,
+            alarm_description="Lambda max memory used > 120MB"
+        )
+
+        # Send operational alarms to the same SNS topic
+        for op_alarm in [errors_alarm, throttles_alarm, duration_alarm, invocations_low_alarm, memory_alarm]:
+            op_alarm.add_alarm_action(cw_actions.SnsAction(topic))
+
+        #--- 7. Create CloudWatch metrics with dimension for each URL
         # Reference: AWS CDK Python – aws_cloudwatch.Metric
         # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_cloudwatch/README.html#metric
         def metric_availability(url: str) -> cloudwatch.Metric:
@@ -258,6 +332,20 @@ class DangQuocToanStack(Stack):
                 [latency_widget],
                 [status_code_widget],
             ],
+        )
+
+        #--- 9. CodeDeploy deployment group to enable canary and automatic rollback
+        codedeploy.LambdaDeploymentGroup(
+            self,
+            "WHDeploymentGroup",
+            alias=alias,
+            deployment_config=codedeploy.LambdaDeploymentConfig.CANARY_10_PERCENT_5_MINUTES,
+            alarms=[errors_alarm, throttles_alarm, duration_alarm],  # key health signals
+            auto_rollback=codedeploy.AutoRollbackConfig(
+                deployment_in_alarm=True,
+                failed_deployment=True,
+                stopped_deployment=True,
+            ),
         )
 
         # Helper for ID-safe names (CDK IDs must avoid problematic chars)

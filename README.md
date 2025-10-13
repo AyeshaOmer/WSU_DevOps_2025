@@ -41,3 +41,25 @@ The pipeline includes a `ManualApprovalStep` before `Prod`. After `Staging` pass
 ### Notes
 - The crawler tests stub network calls and `boto3` so they run offline.
 - Adjust websites in `DangQuocToan/modules/website.json` to change monitored URLs.
+
+## Week 11: Ops Metrics and Rollback
+
+Added in Week 11:
+- Operational CloudWatch alarms on the crawler Lambda: `Errors`, `Throttles`, `p99 Duration`, `Invocations (low)`, and `MaxMemoryUsed`.
+- SNS notifications wired to the same alarm topic as URL health.
+- Lambda version + `live` alias, and a CodeDeploy `LambdaDeploymentGroup` with `CANARY_10PERCENT_5MINUTES` traffic shifting.
+- Automatic rollback: CodeDeploy monitors alarms and rolls back if they breach during deployment.
+
+Where to look:
+- Lambda + alarms + CodeDeploy: `DangQuocToan/dang_quoc_toan/dang_quoc_toan_stack.py`
+- Infra tests covering alias/CodeDeploy: `DangQuocToan/tests/unit/test_infra.py`
+
+Validate locally:
+```
+pip install -r Thomas/requirements.txt
+pytest DangQuocToan/tests/unit -q
+```
+
+Deploy notes:
+- Pipeline deploys the stack and uses CodeDeploy for Lambda traffic shifting.
+- Prod requires manual approval (Week 10) and will rollback automatically (Week 11) if alarms breach.
