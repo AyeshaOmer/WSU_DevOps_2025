@@ -60,8 +60,6 @@ class ThomasStack(Stack): # define a CDK Stack named ThomasStack
             ProdStage(self, "Prod"),
             pre=[pipelines.ManualApprovalStep("ApproveBeforeProd")]
         )
-        # Explicitly add pre-approval to ensure it appears in CodePipeline UI
-        prod_stage.add_pre(pipelines.ManualApprovalStep("ApproveBeforeProd-Pre"))
 
 ## Add post-deployment tests steps for Beta stage
 ## https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.pipelines/StageDeployment.html#aws_cdk.pipelines.StageDeployment.add_post

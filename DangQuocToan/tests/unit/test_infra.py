@@ -1,5 +1,6 @@
 import aws_cdk as core
 from aws_cdk.assertions import Template
+import os, json
 
 from dang_quoc_toan.dang_quoc_toan_stack import DangQuocToanStack
 
@@ -42,3 +43,13 @@ def test_alarms_exist():
     alarms = template.find_resources("AWS::CloudWatch::Alarm")
     assert len(alarms) >= 1
 
+
+def test_alarm_count_matches_urls():
+    # Expect 3 alarms per URL (availability, latency, status)
+    websites_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "modules", "website.json"))
+    with open(websites_path, "r", encoding="utf-8") as f:
+        website_list = [entry["url"] for entry in json.load(f)]
+
+    template = synth_template()
+    alarms = template.find_resources("AWS::CloudWatch::Alarm")
+    assert len(alarms) == len(website_list) * 3
