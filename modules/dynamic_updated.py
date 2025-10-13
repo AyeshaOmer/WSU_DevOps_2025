@@ -16,7 +16,7 @@ def lambda_handler(event, context):
     # Step 1: Query current URLs (only type='url')
     response = url_table.query(
         KeyConditionExpression=Key('type').eq('url'),
-        ExpressionAttributeNames={'#type': 'type'}  # If 'type' is reserved
+        ExpressionAttributeNames={'#type': 'type'} 
     )
     current_urls = [item['id'] for item in response['Items']]
 
