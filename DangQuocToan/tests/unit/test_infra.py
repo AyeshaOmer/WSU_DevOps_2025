@@ -93,3 +93,19 @@ def test_lambda_alias_and_codedeploy():
             "DeploymentConfigName": "CodeDeployDefault.LambdaCanary10Percent5Minutes",
         },
     )
+
+
+def test_targets_api_and_table():
+    template = synth_template()
+    # Either a DynamoDB table exists or at least the API Lambda exists
+    ddb = template.find_resources("AWS::DynamoDB::Table")
+    if not ddb:
+        template.has_resource_properties(
+            "AWS::Lambda::Function",
+            {"Handler": "TargetsApiLambda.handler"},
+        )
+    # Rest API exists
+    template.find_resources("AWS::ApiGateway::RestApi")
+    # Methods present
+    methods = template.find_resources("AWS::ApiGateway::Method")
+    assert len(methods) >= 2

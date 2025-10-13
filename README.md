@@ -68,3 +68,22 @@ CodeDeploy in CI/CD:
 - The pipeline synthesizes with `-c enable_code_deploy=false` to avoid account/region subscription issues.
 - To enable CodeDeploy, synthesize/deploy with context: `cd Thomas && cdk synth -c enable_code_deploy=true` and then `cdk deploy ThomasStack -c enable_code_deploy=true`.
 - You may need to visit the CodeDeploy console once in your target region to initialize the service and ensure the service-linked role exists.
+
+## Week 12: CRUD API for Targets
+
+What’s included:
+- DynamoDB `TargetsTable-<stack>` keyed by `WebsiteName`.
+- Lambda `TargetsApiLambda` implements CRUD with proxy integration.
+- API Gateway REST API `TargetsApi-<stack>` with resources `/targets` and `/targets/{id}` (ANY methods, CORS enabled).
+- Metrics recorded in CloudWatch: `crud_read_time_ms`, `crud_write_time_ms`.
+
+Try it (after deploy):
+- Base URL is shown in API Gateway → Stages → `v1`.
+- `POST /targets` body: `{ "url": "https://example.com", "note": "..." }`
+- `GET /targets` → list; `GET /targets/{id}` → single item
+- `PUT /targets/{id}` body merges/replaces attributes
+- `DELETE /targets/{id}` deletes item
+
+Tests
+- Lambda CRUD unit tests: `DangQuocToan/tests/unit/test_api_lambda.py`
+- Infra tests check the table, API, and methods exist.

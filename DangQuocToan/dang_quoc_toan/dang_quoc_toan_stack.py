@@ -4,6 +4,7 @@ from aws_cdk import (
     Duration,
     RemovalPolicy,
     aws_lambda as _lambda,
+    aws_apigateway as apigw,
     aws_events as events_,
     aws_events_targets as targets_,
     aws_iam as iam,
@@ -333,6 +334,56 @@ class DangQuocToanStack(Stack):
                 [status_code_widget],
             ],
         )
+
+        # --- 10. Targets CRUD API (DynamoDB + Lambda + API Gateway)
+        targets_table = TableV2(
+            self,
+            "TargetsTable",
+            table_name=f"TargetsTable-{self.stack_name}",
+            partition_key=Attribute(name="WebsiteName", type=AttributeType.STRING),
+            billing=Billing.on_demand(),
+            encryption=TableEncryptionV2.dynamo_owned_key(),
+        )
+        targets_table.apply_removal_policy(RemovalPolicy.DESTROY)
+
+        targets_lambda = _lambda.Function(
+            self,
+            "TargetsApiLambda",
+            runtime=_lambda.Runtime.PYTHON_3_13,
+            handler="TargetsApiLambda.handler",
+            code=_lambda.Code.from_asset(
+                os.path.join(os.path.dirname(__file__), "..", "modules")
+            ),
+            timeout=Duration.seconds(30),
+            environment={
+                "TARGETS_TABLE_NAME": targets_table.table_name,
+                "METRIC_NAMESPACE": NAMESPACE,
+            },
+        )
+        targets_table.grant_read_write_data(targets_lambda)
+        targets_lambda.add_to_role_policy(
+            iam.PolicyStatement(
+                actions=["cloudwatch:PutMetricData"],
+                resources=["*"],
+            )
+        )
+
+        api = apigw.RestApi(
+            self,
+            "TargetsApi",
+            rest_api_name=f"TargetsApi-{self.stack_name}",
+            default_cors_preflight_options=apigw.CorsOptions(
+                allow_origins=apigw.Cors.ALL_ORIGINS,
+                allow_methods=apigw.Cors.ALL_METHODS,
+            ),
+            deploy_options=apigw.StageOptions(stage_name="v1"),
+        )
+
+        lambda_integration = apigw.LambdaIntegration(targets_lambda, proxy=True)
+        targets_res = api.root.add_resource("targets")
+        targets_res.add_method("ANY", lambda_integration)
+        item_res = targets_res.add_resource("{id}")
+        item_res.add_method("ANY", lambda_integration)
 
         #--- 9. CodeDeploy application + deployment group (Prod-only by default)
         enable_cd_ctx = self.node.try_get_context("enable_code_deploy")
