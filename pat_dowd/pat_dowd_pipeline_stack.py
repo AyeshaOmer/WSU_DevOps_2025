@@ -43,8 +43,29 @@ class PatDowdPipelineStack(Stack):
                 "pytest tests/unit/test_pat_dowd_stack.py -v",
             ],
         )
+        intergration_test = pipelines.ShellStep(
+            "intergration",
+            commands=[
+                "python -m pip install aws-cdk-lib", 
+                "python -m pip install -r requirements-dev.txt",
+                "pytest tests/unit/test_pat_dowd_stack.py -v",
+            ],
+        )
+        prod_test = pipelines.ShellStep(
+            "prod",
+            commands=[
+                "python -m pip install aws-cdk-lib", 
+                "python -m pip install -r requirements-dev.txt",
+                "pytest tests/unit/test_pat_dowd_stack.py -v",
+            ],
+        )
 
         # Add the 'alpha' (application) stage
         alpha_stage = MypipelineStage(self, "Alpha")
+        beta_stage = MypipelineStage(self, "beta")
+        prod_stage = MypipelineStage(self, "prod")
+
 
         pipeline.add_stage(alpha_stage, pre=[unit_test])
+        pipeline.add_stage(beta_stage, pre=[intergration_test])
+        pipeline.add_stage(prod_stage, pre=[prod_test])
