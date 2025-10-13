@@ -62,10 +62,12 @@ class Week2PracStack(Stack):
 
         # --- Dashboard ---
         # Use the stack name to make the dashboard unique for Beta, Gamma, Prod
+        stage_suffix = id.lower()  # adds stage name to dashboard (beta, gamma, prod)
         dashboard = cw.Dashboard(
             self,
-            "WebHealthDashboard",
-            dashboard_name=f"WebHealthDashboard-{self.stack_name}"
+            f"WebHealthDashboard-{stage_suffix}",
+            dashboard_name=f"WebHealthDashboard-{stage_suffix}"
+            removal_policy=RemovalPolicy.DESTROY
         )
 
         widgets: list[cw.IWidget] = []
