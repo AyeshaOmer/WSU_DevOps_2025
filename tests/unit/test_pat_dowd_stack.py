@@ -21,7 +21,7 @@ def test_lambda():
     stack = PatDowdStack(app, "pat-dowd")
     template = assertions.Template.from_stack(stack)
     template.resource_count_is("AWS::Lambda::Function", 2)
-
+#Lambda testing 
 def test_sns_topic():
     app = core.App()
     stack = PatDowdStack(app, "pat-dowd")
