@@ -7,19 +7,6 @@ from aws_cdk import (
 from constructs import Construct
 from pat_dowd.pipeline_Stage import MypipelineStage
 
-
-class EmptyStack(Stack):
-    """An empty stack that doesn't deploy any resources"""
-    def __init__(self, scope: Construct, construct_id: str, **kwargs):
-        super().__init__(scope, construct_id, **kwargs)
-        # Empty stack, no resources
-
-class TestStage(Stage):
-    """A stage that contains an empty stack, just for testing"""
-    def __init__(self, scope: Construct, construct_id: str, **kwargs):
-        super().__init__(scope, construct_id, **kwargs)
-        EmptyStack(self, "EmptyStack")
-
 class PatDowdPipelineStack(Stack):
     def __init__(self, scope: Construct, construct_id: str, **kwargs):
         super().__init__(scope, construct_id, **kwargs)
@@ -83,10 +70,10 @@ class PatDowdPipelineStack(Stack):
         )
 
         # Integration test stage (no deployment)
-        # pipeline.add_wave(
-        #     id ="integration_stage",
-        #     pre=[integration_test]
-        # )
+        pipeline.add_wave(
+            id ="integration_stage",
+            pre=[integration_test]
+        )
 
         # Final stage with actual deployment and production tests
         prod_stage = MypipelineStage(self, "Production")
