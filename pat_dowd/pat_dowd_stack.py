@@ -16,7 +16,6 @@ from aws_cdk import (
     aws_lambda_event_sources as event_sources,
 )
 from constructs import Construct
-from modules.WebHealthLambda import get_urls
 
 class PatDowdStack(Stack):
 
