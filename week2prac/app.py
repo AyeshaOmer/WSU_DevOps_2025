@@ -9,11 +9,11 @@ app = cdk.App()
 WebMonitorPipelineStack(
     app,
     "WebMonitorPipelineStack",
-    repo_string="Vrishtii/WSU_DevOps_2025",  
-    branch="main",                          
-    codestar_connection_arn="arn:aws:codeconnections:ap-southeast-2:934249453094:connection/c2c2afe8-69c0-4078-8ac2-328a9f626f66", 
-    deploy_region="ap-southeast-2",
-                env=cdk.Environment(account="934249453094", region="ap-southeast-2")
+    # <<< FILL THESE IN >>>
+    repo_string="Vrishtii/WSU_DevOps_2025",           # ow
+    codestar_connection_arn="arn:aws:codestar-connections:ap-southeast-2:934249453094:connection/c2c2afe8-69c0-4078-8ac2-328a9f626f66",
+    env=cdk.Environment(account="934249453094", region="ap-southeast-2"),
+
 
     # If you don't specify 'env', this stack will be environment-agnostic.
     # Account/Region-dependent features and context lookups will not work,
@@ -30,6 +30,7 @@ WebMonitorPipelineStack(
     #env=cdk.Environment(account='123456789012', region='us-east-1'),
 
     # For more information, see https://docs.aws.amazon.com/cdk/latest/guide/environments.html
-    )
+    
+)
 
 app.synth()
