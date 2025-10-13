@@ -9,7 +9,7 @@ from pat_dowd.pipeline_Stage import MypipelineStage
 class PatDowdPipelineStack(Stack):
     def __init__(self, scope: Construct, construct_id: str, **kwargs):
         super().__init__(scope, construct_id, **kwargs)
-
+        #please oh god
         source = pipelines.CodePipelineSource.connection(
             "prinpa/WSU_DEVOPS_2025",
             "refactor",
@@ -38,7 +38,6 @@ class PatDowdPipelineStack(Stack):
         unit_test = pipelines.ShellStep(
             "unitTest",
             commands=[
-
                 "python -m pip install aws-cdk-lib", 
                 "python -m pip install -r requirements-dev.txt",
                 "pytest tests/unit/test_pat_dowd_stack.py -v",
