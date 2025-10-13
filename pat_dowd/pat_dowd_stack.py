@@ -69,6 +69,14 @@ class PatDowdStack(Stack):
         url = urls.add_resource("{url}")
         url.add_method("DELETE", apigw.LambdaIntegration(url_manager))
 
+        from aws_cdk import CfnOutput
+        CfnOutput(
+            self,
+            "ApiEndpoint",
+            value=api.url,
+            description="URL of the API Gateway endpoint",
+            export_name="UrlApiEndpoint",
+        )
         # Create Web Health Lambda function
         fn = _lambda.Function(
             self,
