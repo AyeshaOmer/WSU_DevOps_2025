@@ -20,10 +20,10 @@ def test_lambda():
     app = core.App()
     stack = PatDowdStack(app, "pat-dowd")
     template = assertions.Template.from_stack(stack)
-    template.resource_count_is("AWS::Lambda::Function", 2)
+    template.resource_count_is("AWS::Lambda::Function", 3)
 #Lambda testing 
 def test_sns_topic():
     app = core.App()
     stack = PatDowdStack(app, "pat-dowd")
     template = assertions.Template.from_stack(stack)
-    template.resource_count_is("AWS::SNS::Topic", 3)
+    template.resource_count_is("AWS::SNS::Topic", 2)
