@@ -1,7 +1,8 @@
+# Multi-stage CI/CD pipeline using CDK Pipelines (Beta → Gamma → Prod)
 from aws_cdk import (
     Stack,
     Environment,
-    pipelines as pipelines,
+    pipelines as pipelines,  # CDK Pipelines
 )
 from constructs import Construct
 from .app_stage import AppStage
@@ -13,36 +14,40 @@ class WebMonitorPipelineStack(Stack):
         scope: Construct,
         construct_id: str,
         *,
-        repo_string: str,                 # e.g., "owner/repo"
-        branch: str,                      # e.g., "main"
-        codestar_connection_arn: str,     # your CodeStar Connections ARN
+        repo_string: str,
+        branch: str,
+        codestar_connection_arn: str,
         deploy_region: str = "ap-southeast-2",
         **kwargs,
     ) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
-        # --- Source (CodeStar Connections) ---
+        # --- Source from your GitHub (via CodeStar Connections) ---
         source = pipelines.CodePipelineSource.connection(
             repo_string,
             branch,
             connection_arn=codestar_connection_arn,
         )
 
-        # --- Synth step ---
-        # Your app.py and cdk.json are in the *outer* week2prac/
+        # --- Synth step (NOTE the cd into week2prac) ---
         synth_step = pipelines.ShellStep(
             "Synth",
             input=source,
             install_commands=[
                 "npm install -g aws-cdk",
                 "python -m pip install --upgrade pip",
-                "python -m pip install -r requirements.txt",   # outer file
+                #  install requirements from the subfolder
+                "python -m pip install -r week2prac/requirements.txt",
             ],
             commands=[
-                "cdk synth --app 'python app.py'",            # run from root
+                #  synth the app located in the subfolder 
+                "cdk synth --app 'python week2prac/app.py'",
+                # (alternative if your image doesn’t have cdk on PATH)
+                # "npx cdk synth --app 'python week2prac/app.py'",
             ],
-            primary_output_directory="cdk.out",
-        )
+                    # (Optional) help the pipeline find the assembly if it complains:
+                    # primary_output_directory="week2prac/cdk.out",
+                )
 
         pipeline = pipelines.CodePipeline(
             self,
@@ -53,19 +58,15 @@ class WebMonitorPipelineStack(Stack):
 
         stage_env = Environment(region=deploy_region)
 
-        # --- Beta Stage ---
+        # Stages
         beta = pipeline.add_stage(AppStage(self, "Beta", env=stage_env))
         beta.add_post(
-            pipelines.ShellStep(
-                "BetaSmokeTests",
-                commands=[
-                    'echo "Running Beta smoke tests..."',
-                    'python -c "print(\'ok\')"',
-                ],
-            )
+            pipelines.ShellStep("BetaSmokeTests", commands=[
+                'echo "Running Beta smoke tests..."',
+                'python -c "print(\'ok\')"',
+            ])
         )
 
-        # --- Gamma Stage ---
         gamma = pipeline.add_stage(AppStage(self, "Gamma", env=stage_env))
         gamma.add_pre(
             pipelines.ManualApprovalStep(
@@ -74,16 +75,12 @@ class WebMonitorPipelineStack(Stack):
             )
         )
         gamma.add_post(
-            pipelines.ShellStep(
-                "GammaHealthChecks",
-                commands=[
-                    'echo "Running Gamma health checks..."',
-                    'python -c "print(\'gamma checks ok\')"',
-                ],
-            )
+            pipelines.ShellStep("GammaHealthChecks", commands=[
+                'echo "Running Gamma health checks..."',
+                'python -c "print(\'gamma checks ok\')"',
+            ])
         )
 
-        # --- Prod Stage ---
         prod = pipeline.add_stage(AppStage(self, "Prod", env=stage_env))
         prod.add_pre(
             pipelines.ManualApprovalStep(
@@ -92,11 +89,8 @@ class WebMonitorPipelineStack(Stack):
             )
         )
         prod.add_post(
-            pipelines.ShellStep(
-                "ProdVerification",
-                commands=[
-                    'echo "Verifying Prod..."',
-                    'python -c "print(\'prod verification ok\')"',
-                ],
-            )
+            pipelines.ShellStep("ProdVerification", commands=[
+                'echo "Verifying Prod..."',
+                'python -c "print(\'prod verification ok\')"',
+            ])
         )

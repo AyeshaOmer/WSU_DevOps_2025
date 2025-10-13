@@ -1,32 +1,29 @@
-import os
 import json
+import os
 import boto3
-from datetime import datetime, timezone
+from datetime import datetime
 
-table = boto3.resource("dynamodb").Table(os.environ["TABLE_NAME"])
+TABLE_NAME = os.getenv("TABLE_NAME")
+dynamodb = boto3.resource("dynamodb")
+table = dynamodb.Table(TABLE_NAME)
 
 def lambda_handler(event, context):
-    # SNS → Lambda subscription receives an SNS event
-    for record in event.get("Records", []):
-        if record.get("EventSource") != "aws:sns":
-            continue
-        message = record["Sns"]["Message"]
-        try:
-            payload = json.loads(message)
-        except Exception:
-            payload = {"raw": message}
+    """
+    Lambda function to log CloudWatch alarm notifications into DynamoDB
+    """
+    for record in event["Records"]:
+        sns_message = json.loads(record["Sns"]["Message"])
+        alarm_name = sns_message.get("AlarmName", "UnknownAlarm")
+        new_state = sns_message.get("NewStateValue", "UNKNOWN")
+        reason = sns_message.get("NewStateReason", "")
 
-        alarm_name = (payload.get("AlarmName")
-                      or payload.get("AlarmDescription")
-                      or "UnknownAlarm")
+        timestamp = datetime.utcnow().isoformat()
 
-        ts = datetime.now(timezone.utc).isoformat()
+        table.put_item(Item={
+            "alarm_name": alarm_name,
+            "timestamp": timestamp,
+            "new_state": new_state,
+            "reason": reason
+        })
 
-        item = {
-            "alarm_name": str(alarm_name),
-            "timestamp": ts,
-            "payload": json.dumps(payload)[:350000],  # guard size
-        }
-        table.put_item(Item=item)
-
-    return {"ok": True}
+    return {"status": "success", "records_logged": len(event["Records"])}
