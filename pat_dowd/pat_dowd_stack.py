@@ -4,17 +4,16 @@ from aws_cdk import (
     RemovalPolicy,
     aws_events as events,
     aws_events_targets as targets,
-    aws_iam,
+    aws_iam as iam,
     aws_apigateway as apigw,
     aws_lambda as _lambda,
     aws_cloudwatch as cw,
-    aws_iam as iam,
     aws_sns as sns,
     aws_sns_subscriptions as sns_subs,
     aws_dynamodb as dynamodb,
     aws_cloudwatch_actions as actions,
-    CfnOutput
-
+    CfnOutput,
+    aws_lambda_event_sources as event_sources,
 )
 from constructs import Construct
 from modules.WebHealthLambda import get_urls
@@ -38,7 +37,8 @@ class PatDowdStack(Stack):
                 type=dynamodb.AttributeType.STRING
             ),
             billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST,
-            removal_policy=RemovalPolicy.DESTROY  # For development; change to RETAIN for production
+            removal_policy=RemovalPolicy.DESTROY,  # For development; change to RETAIN for production
+            stream=dynamodb.StreamViewType.NEW_AND_OLD_IMAGES
         )
 
         # Create URL Manager Lambda function
@@ -103,7 +103,7 @@ class PatDowdStack(Stack):
 
         #role definitons
         fn.add_to_role_policy(
-            aws_iam.PolicyStatement(
+            iam.PolicyStatement(
                 effect=iam.Effect.ALLOW,
                 actions=["cloudwatch:PutMetricData"], resources=["*"]
             )
@@ -142,125 +142,75 @@ class PatDowdStack(Stack):
         # Grant DynamoDB permissions to the Lambda function
         alarm_table.grant_write_data(alarm_logger)
 
-        dashboard = cw.Dashboard(self, "Dash",
-            default_interval=Duration.days(7),
-            variables=[cw.DashboardVariable(
-                id="board1",
-                type=cw.VariableType.PATTERN,
-                label="Web Health",
-                input_type=cw.VariableInputType.INPUT,
-                value="ap-southeast-2",
-                default_value=cw.DefaultValue.value("ap-southeast-2"),
-                visible=True
-            )],
+        # New: Dynamic Updater Lambda (triggered by stream)
+        dynamic_updater = _lambda.Function(
+            self,
+            "DynamicUpdaterFunction",
+            runtime=_lambda.Runtime.PYTHON_3_13,
+            handler="dynamic_updater.lambda_handler",
+            code=_lambda.Code.from_asset("modules"),
+            timeout=Duration.seconds(60),  # Longer for many URLs
+            environment={
+                "URL_TABLE_NAME": url_table.table_name,
+                "ALARM_TABLE_NAME": alarm_table.table_name,  # If needed for logging
+                "DASHBOARD_NAME": "Dash",
+                "EMAIL_SUB": "patdowd07@gmail.com",
+            },
         )
-        # Create CloudWatch metrics for each URL
-        
-        site_urls = ["www.google.com"]
-        for url in site_urls:
-            availability_metric = cw.Metric(
-                namespace="WebHelperDashboard",
-                metric_name="Availability",
-                dimensions_map={"URL": url},
-                statistic="Average",
-                period=Duration.minutes(1)
+
+        # Grant permissions to Dynamic Updater
+        url_table.grant_read_data(dynamic_updater)  # Query current URLs
+        # CloudWatch: Manage alarms and dashboard
+        dynamic_updater.add_to_role_policy(
+            iam.PolicyStatement(
+                effect=iam.Effect.ALLOW,
+                actions=[
+                    "cloudwatch:DeleteAlarms",
+                    "cloudwatch:PutMetricAlarm",
+                    "cloudwatch:DescribeAlarms",  # To list/delete old ones
+                    "cloudwatch:PutDashboard",
+                    "cloudwatch:DeleteDashboards",  # Optional: If recreating
+                ],
+                resources=["*"],  # Scope to your namespace if possible
             )
-
-            latency_metric = cw.Metric(
-                namespace="WebHelperDashboard",
-                metric_name="Latency",
-                dimensions_map={"URL": url},
-                statistic="Average",
-                period=Duration.minutes(1)
+        )
+        # SNS: Create/delete topics and subscriptions
+        dynamic_updater.add_to_role_policy(
+            iam.PolicyStatement(
+                effect=iam.Effect.ALLOW,
+                actions=[
+                    "sns:CreateTopic",
+                    "sns:DeleteTopic",
+                    "sns:AddPermission",
+                    "sns:Subscribe",
+                    "sns:Unsubscribe",
+                    "sns:ListSubscriptionsByTopic",
+                    "sns:RemovePermission",
+                ],
+                resources=["*"],
             )
-
-            size_metric = cw.Metric(
-                namespace="WebHelperDashboard",
-                metric_name="ResponseSize",
-                dimensions_map={"URL": url},
-                statistic="Average",
-                period=Duration.minutes(1),
-
+        )
+        # Trigger: Add Event Source Mapping for the stream
+        dynamic_updater.add_event_source(
+            event_sources.DynamoEventSource(
+                url_table,
+                starting_position=_lambda.StartingPosition.TRIM_HORIZON,  # Start from now; change to LATEST for ongoing
+                batch_size=10,  # Small batches for URL changes
+                # Filter to only 'url' type changes (optional, via bisect if needed)
             )
-            # Create SNS Topic for alarms
-            alarm_topic = sns.Topic(
-                self,
-                f"{url}-alarm-topic",
-                display_name=f"Web Health Alarms for {url}",
-            )
+        )
 
-            # Add email subscription to the topic
-            alarm_topic.add_subscription(
-                sns_subs.EmailSubscription("patdowd07@gmail.com")
-            )
-            
-            # Add Lambda subscription to log alarms in DynamoDB
-            alarm_topic.add_subscription(
-                sns_subs.LambdaSubscription(alarm_logger)
-            )
+        # Grant permission for alarm_logger to be subscribed (if using per-topic subs)
+        alarm_logger.add_permission(
+            "SubscribeFromDynamicUpdater",
+            principal=iam.ServicePrincipal("sns.amazonaws.com"),
+            source_arn="*",  # Or specific topic ARNs; broad for dynamic
+            action="lambda:InvokeFunction",
+        )
 
-            # Create alarms
-            # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_cloudwatch/Alarm.html
-            availability_alarm = cw.Alarm(
-                self,
-                f"{url} Availability Alarm",
-                metric=availability_metric,
-                comparison_operator=cw.ComparisonOperator.LESS_THAN_OR_EQUAL_TO_THRESHOLD,
-                threshold=0,
-                evaluation_periods=1,
-
-            )
-            availability_alarm.add_alarm_action(actions.SnsAction(alarm_topic))
-
-            latency_alarm = cw.Alarm(
-                self,
-                f"{url} Latency Alarm",
-                metric=latency_metric,
-                comparison_operator=cw.ComparisonOperator.GREATER_THAN_THRESHOLD,
-                threshold=1,
-                evaluation_periods=1,
-
-
-            )
-            latency_alarm.add_alarm_action(actions.SnsAction(alarm_topic))
-            
-            size_alarm = cw.Alarm(
-                self,
-                f"{url} Size Alarm",
-                metric=size_metric,
-                comparison_operator=cw.ComparisonOperator.LESS_THAN_THRESHOLD,
-                threshold=1,
-                evaluation_periods=1,
-            )
-            size_alarm.add_alarm_action(actions.SnsAction(alarm_topic))
-
-
-            widget_array = []
-            widget_array.append(cw.AlarmWidget(
-                title=f"{url} Availability",
-                alarm=availability_alarm
-            ))
-
-            widget_array.append(cw.AlarmWidget(
-                title=f"{url} Latency",
-                alarm=latency_alarm
-            ))
-
-            widget_array.append(cw.AlarmWidget(
-                title=f"{url} Size",
-                alarm=size_alarm
-            ))
-        
-            dashboard.add_widgets(*widget_array)
-
-
-        def get_urls(url_table):
-            # Get URLs from DynamoDB
-            response = url_table.query(
-                KeyConditionExpression='#type = :type',
-                ExpressionAttributeNames={'#type': 'type'},
-                ExpressionAttributeValues={':type': 'url'}
-            )
-            urls = [item['id'] for item in response['Items']]
-            return urls
-        
+        # Create empty initial dashboard (will be updated by Lambda)
+        dashboard = cw.Dashboard(
+            self, "Dash",
+            dashboard_name="Dash",  # Explicit name for Lambda reference
+            # Remove variables if not needed; or keep for region filter
+        )
