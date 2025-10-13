@@ -80,7 +80,7 @@ class PatDowdPipelineStack(Stack):
         # Test stage (no deployment)
         test_stage = TestStage(self, "Test")
         pipeline.add_wave(
-            test_stage,
+            id="unit_test",
             pre=[unit_test]
         )
 
