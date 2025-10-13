@@ -336,8 +336,8 @@ class DangQuocToanStack(Stack):
 
         #--- 9. CodeDeploy application + deployment group (Prod-only by default)
         enable_cd_ctx = self.node.try_get_context("enable_code_deploy")
-        is_prod_stack = "prod" in self.stack_name.lower()
-        if (isinstance(enable_cd_ctx, str) and enable_cd_ctx.lower() in ("1", "true", "yes")) or is_prod_stack:
+        # Only enable CodeDeploy when explicitly requested via context
+        if isinstance(enable_cd_ctx, str) and enable_cd_ctx.lower() in ("1", "true", "yes"):
             cd_app = codedeploy.LambdaApplication(self, "WHDeploymentApp")
             cd_app.apply_removal_policy(RemovalPolicy.RETAIN)
 

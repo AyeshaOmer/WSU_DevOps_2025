@@ -63,3 +63,8 @@ pytest DangQuocToan/tests/unit -q
 Deploy notes:
 - Pipeline deploys the stack and uses CodeDeploy for Lambda traffic shifting.
 - Prod requires manual approval (Week 10) and will rollback automatically (Week 11) if alarms breach.
+
+CodeDeploy in CI/CD:
+- The pipeline synthesizes with `-c enable_code_deploy=false` to avoid account/region subscription issues.
+- To enable CodeDeploy, synthesize/deploy with context: `cd Thomas && cdk synth -c enable_code_deploy=true` and then `cdk deploy ThomasStack -c enable_code_deploy=true`.
+- You may need to visit the CodeDeploy console once in your target region to initialize the service and ensure the service-linked role exists.

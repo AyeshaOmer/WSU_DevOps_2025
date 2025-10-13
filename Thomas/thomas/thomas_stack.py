@@ -38,7 +38,7 @@ class ThomasStack(Stack): # define a CDK Stack named ThomasStack
                 "pytest DangQuocToan/tests/unit -q",
                 "pytest Thomas/tests/unit -q",
                 "cd Thomas", # Change into the Thomas app folder
-                "cdk synth", # Generate CloudFormation templates
+                "cdk synth -c enable_code_deploy=false", # Generate templates (disable CodeDeploy in CI)
             ],
             primary_output_directory="Thomas/cdk.out", # Tell pipeline where synthesized files go
         )
