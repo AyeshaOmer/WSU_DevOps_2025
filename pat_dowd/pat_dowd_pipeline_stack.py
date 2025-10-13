@@ -43,7 +43,7 @@ class PatDowdPipelineStack(Stack):
                 "pytest tests/unit/test_pat_dowd_stack.py -v",
             ],
         )
-        intergration_test = pipelines.ShellStep(
+        integration_test = pipelines.ShellStep(
             "intergration",
             commands=[
                 "python -m pip install aws-cdk-lib", 
@@ -66,6 +66,22 @@ class PatDowdPipelineStack(Stack):
         prod_stage = MypipelineStage(self, "prod")
 
 
-        pipeline.add_stage(alpha_stage, pre=[unit_test])
-        pipeline.add_stage(beta_stage, pre=[intergration_test])
-        pipeline.add_stage(prod_stage, pre=[prod_test])
+                # Test stage (no deployment)
+        pipeline.add_stage(
+            "TestStage",
+            pre=[unit_test]
+        )
+
+        # Beta stage with integration tests
+        beta_stage = MypipelineStage(self, "Beta")
+        pipeline.add_stage(
+            beta_stage,
+            pre=[integration_test]
+        )
+
+        # Production stage with final tests
+        prod_stage = MypipelineStage(self, "Production")
+        pipeline.add_stage(
+            prod_stage,
+            pre=[prod_test]
+        )
