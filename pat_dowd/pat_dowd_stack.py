@@ -200,14 +200,6 @@ class PatDowdStack(Stack):
             )
         )
 
-        # Grant permission for alarm_logger to be subscribed (if using per-topic subs)
-        alarm_logger.add_permission(
-            "SubscribeFromDynamicUpdater",
-            principal=iam.ServicePrincipal("sns.amazonaws.com"),
-            source_arn="*",  # Or specific topic ARNs; broad for dynamic
-            action="lambda:InvokeFunction",
-        )
-
         # Create empty initial dashboard (will be updated by Lambda)
         dashboard = cw.Dashboard(
             self, "Dash",
