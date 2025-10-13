@@ -1,15 +1,16 @@
 import json
 import pytest
-from aws_cdk import assertions, core
+from aws_cdk import assertions, App
 from modules import constants
 from project_pipeline.project_pipeline_stack import ProjectPipelineStack
 
 # example tests. To run these tests, uncomment this file along with the example
 # resource in project_pipeline/project_pipeline_stack.py
 def test_sqs_queue_created():
-    app = core.App()
+    app = App()
     stack = ProjectPipelineStack(app, "project-pipeline")
     template = assertions.Template.from_stack(stack)
+    return stack
 
 #     template.has_resource_properties("AWS::SQS::Queue", {
 #         "VisibilityTimeout": 300
