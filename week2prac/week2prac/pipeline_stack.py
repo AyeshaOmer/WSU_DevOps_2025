@@ -1,4 +1,3 @@
-# week2prac/pipeline_stack.py
 from aws_cdk import (
     Stack,
     Environment,
@@ -29,9 +28,7 @@ class WebMonitorPipelineStack(Stack):
             connection_arn=codestar_connection_arn,
         )
 
-        # --- Synth (cd into 'week2prac', then synth) ---
-        # We 'cd week2prac' so any paths that depend on CWD (like Code.from_asset("lambda"))
-        # resolve correctly to week2prac/lambda.
+        # --- Synth (cd into 'week2prac', then synth app at repo root) ---
         synth_step = pipelines.ShellStep(
             "Synth",
             input=source,
@@ -42,9 +39,8 @@ class WebMonitorPipelineStack(Stack):
             ],
             commands=[
                 "cd week2prac",
-                "cdk synth",
+                "cdk synth --app 'python ../app.py'",
             ],
-            # Because we cd into week2prac, the cdk.out is produced in that folder
             primary_output_directory="week2prac/cdk.out",
         )
 
@@ -55,10 +51,9 @@ class WebMonitorPipelineStack(Stack):
             synth=synth_step,
         )
 
-        # Single-region pipeline (as requested)
         stage_env = Environment(region=deploy_region)
 
-        # --- Beta ---
+        # --- Beta Stage ---
         beta = pipeline.add_stage(AppStage(self, "Beta", env=stage_env))
         beta.add_post(
             pipelines.ShellStep(
@@ -70,7 +65,7 @@ class WebMonitorPipelineStack(Stack):
             )
         )
 
-        # --- Gamma ---
+        # --- Gamma Stage ---
         gamma = pipeline.add_stage(AppStage(self, "Gamma", env=stage_env))
         gamma.add_pre(
             pipelines.ManualApprovalStep(
@@ -88,7 +83,7 @@ class WebMonitorPipelineStack(Stack):
             )
         )
 
-        # --- Prod ---
+        # --- Prod Stage ---
         prod = pipeline.add_stage(AppStage(self, "Prod", env=stage_env))
         prod.add_pre(
             pipelines.ManualApprovalStep(

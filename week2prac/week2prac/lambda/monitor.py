@@ -1,8 +1,8 @@
-import urllib3
 import time
 import json
 import os
 import boto3
+import urllib.request
 
 cloudwatch = boto3.client("cloudwatch")
 NAMESPACE = os.getenv("METRIC_NAMESPACE", "NYTMonitor")
@@ -35,17 +35,17 @@ def lambda_handler(event, context):
     with open(sites_path, "r", encoding="utf-8") as f:
         sites = json.load(f)
 
-    http = urllib3.PoolManager()
     for site in sites:
         start = time.time()
         latency_ms = None
         status_code = None
         available = 0
         try:
-            resp = http.request("GET", site, timeout=urllib3.Timeout(connect=3.0, read=10.0), retries=False)
-            latency_ms = (time.time() - start) * 1000.0
-            status_code = resp.status
-            available = 1 if status_code == 200 else 0
+            req = urllib.request.Request(site, method="GET")
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                status_code = resp.status
+                latency_ms = (time.time() - start) * 1000.0
+                available = 1 if status_code == 200 else 0
         except Exception:
             available = 0
 

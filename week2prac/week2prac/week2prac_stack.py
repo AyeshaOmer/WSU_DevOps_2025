@@ -1,7 +1,6 @@
 from aws_cdk import (
     Stack,
     Duration,
-    RemovalPolicy,
     aws_lambda as lambda_,
     aws_events as events,
     aws_events_targets as targets,
@@ -11,6 +10,7 @@ from aws_cdk import (
     aws_sns_subscriptions as subs,
     aws_cloudwatch_actions as cw_actions,
     aws_dynamodb as dynamodb,
+    RemovalPolicy,
 )
 from constructs import Construct
 import os
@@ -22,11 +22,11 @@ class Week2PracStack(Stack):
 
         METRIC_NAMESPACE = "NYTMonitor"
 
-        # Resolve paths RELATIVE TO THIS FILE so CodeBuild can find assets
-        here = os.path.dirname(__file__)                          # .../week2prac/week2prac
-        lambda_dir = os.path.normpath(os.path.join(here, "..", "lambda"))
-        alarm_logger_dir = os.path.normpath(os.path.join(here, "..", "lambda_alarm_logger"))
-        sites_file = os.path.normpath(os.path.join(lambda_dir, "sites.json"))
+        # Resolve paths relative to THIS file (week2prac/)
+        here = os.path.dirname(__file__)
+        lambda_dir = os.path.join(here, "lambda")
+        alarm_logger_dir = os.path.join(here, "lambda_alarm_logger")
+        sites_file = os.path.join(lambda_dir, "sites.json")
 
         # Lambda: monitor websites
         monitor_fn = lambda_.Function(
@@ -34,7 +34,7 @@ class Week2PracStack(Stack):
             "MonitorNYT",
             runtime=lambda_.Runtime.PYTHON_3_12,
             handler="monitor.lambda_handler",
-            code=lambda_.Code.from_asset(lambda_dir),              # <-- points to week2prac/lambda
+            code=lambda_.Code.from_asset(lambda_dir),
             timeout=Duration.seconds(30),
             environment={"METRIC_NAMESPACE": METRIC_NAMESPACE},
         )
@@ -74,10 +74,11 @@ class Week2PracStack(Stack):
             table_name="WebMonitorAlarmLogs",
             partition_key=dynamodb.Attribute(name="alarm_name", type=dynamodb.AttributeType.STRING),
             sort_key=dynamodb.Attribute(name="timestamp", type=dynamodb.AttributeType.STRING),
-            removal_policy=RemovalPolicy.DESTROY,
             billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST,
             table_class=dynamodb.TableClass.STANDARD,
         )
+        # Apply removal policy after construct (preferred API)
+        alarm_log_table.apply_removal_policy(RemovalPolicy.DESTROY)
 
         # Lambda to log alarms → DynamoDB
         log_lambda = lambda_.Function(
@@ -85,14 +86,14 @@ class Week2PracStack(Stack):
             "AlarmLoggerLambda",
             runtime=lambda_.Runtime.PYTHON_3_12,
             handler="alarm_logger.lambda_handler",
-            code=lambda_.Code.from_asset(alarm_logger_dir),        # <-- points to week2prac/lambda_alarm_logger
+            code=lambda_.Code.from_asset(alarm_logger_dir),
             timeout=Duration.seconds(10),
             environment={"TABLE_NAME": alarm_log_table.table_name},
         )
         alarm_log_table.grant_write_data(log_lambda)
         alarm_topic.add_subscription(subs.LambdaSubscription(log_lambda))
 
-        # Widgets & Alarms
+        # Widgets & Alarms (per site)
         widgets = []
         for site in sites:
             avail_metric = cw.Metric(
@@ -116,7 +117,6 @@ class Week2PracStack(Stack):
             widgets.append(cw.GraphWidget(title=f"Availability - {site}", left=[avail_metric], width=12, height=6))
             widgets.append(cw.GraphWidget(title=f"Latency (p95 ms) - {site}", left=[latency_metric], width=12, height=6))
 
-            # Alarms → send to SNS
             cw.Alarm(
                 self,
                 f"AvailabilityAlarm-{site}",
