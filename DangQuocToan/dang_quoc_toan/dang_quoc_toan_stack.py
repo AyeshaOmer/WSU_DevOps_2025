@@ -269,3 +269,4 @@ class DangQuocToanStack(Stack):
         # truncate to 100 chars just in case
         
         return clean[:100]
+## API Gateway.............
