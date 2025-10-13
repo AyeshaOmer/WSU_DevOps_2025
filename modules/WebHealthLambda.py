@@ -2,7 +2,7 @@ import json
 import logging
 import urllib3
 import time
-import publish_metric
+import modules.publish_metric
 import boto3
 import os
 
@@ -12,7 +12,7 @@ http = urllib3.PoolManager()
 
 # Initialize DynamoDB
 dynamodb = boto3.resource('dynamodb')
-table = dynamodb.Table(os.environ['URL_TABLE_NAME'])
+table = dynamodb.Table("UrlTable")
 
 def get_urls():
     # Get URLs from DynamoDB
@@ -22,7 +22,7 @@ def get_urls():
         ExpressionAttributeValues={':type': 'url'}
     )
     urls = [item['id'] for item in response['Items']]
-    return urls if urls else ["www.google.com", "www.youtube.com"]  # Fallback URLs
+    return urls # Fallback URLs
 
 url_latency = []
 url_avail = []
@@ -68,4 +68,3 @@ def lambda_handler(event, context):
 
     # return the calculated area as a JSON string
     return json.dumps(data)
-

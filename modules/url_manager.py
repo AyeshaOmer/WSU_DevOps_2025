@@ -4,7 +4,9 @@ import os
 from urllib.parse import unquote
 
 dynamodb = boto3.resource('dynamodb')
-table = dynamodb.Table(os.environ['TABLE_NAME'])
+table = dynamodb.Table("UrlTable")
+
+
 
 def lambda_handler(event, context):
     http_method = event['httpMethod']

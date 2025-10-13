@@ -13,8 +13,11 @@ from aws_cdk import (
     aws_sns_subscriptions as sns_subs,
     aws_dynamodb as dynamodb,
     aws_cloudwatch_actions as actions,
+    CfnOutput
+
 )
 from constructs import Construct
+from modules.WebHealthLambda import get_urls
 
 class PatDowdStack(Stack):
 
@@ -48,7 +51,7 @@ class PatDowdStack(Stack):
             timeout=Duration.seconds(30),
             environment={
                 "TABLE_NAME": url_table.table_name
-            }
+            },
         )
 
         # Grant DynamoDB permissions to the URL Manager Lambda
@@ -69,7 +72,7 @@ class PatDowdStack(Stack):
         url = urls.add_resource("{url}")
         url.add_method("DELETE", apigw.LambdaIntegration(url_manager))
 
-        from aws_cdk import CfnOutput
+
         CfnOutput(
             self,
             "ApiEndpoint",
@@ -87,12 +90,11 @@ class PatDowdStack(Stack):
             timeout=Duration.seconds(30),
             environment={
                 "URL_TABLE_NAME": url_table.table_name
-            }
+            },
         )
 
         # Grant DynamoDB read permissions to Web Health Lambda
         url_table.grant_read_data(fn)
-        #cadence definition
         
         rule = events.Rule(
             self, "EveryMinuteRule", schedule=events.Schedule.rate(Duration.minutes(1))
@@ -134,7 +136,7 @@ class PatDowdStack(Stack):
             timeout=Duration.seconds(30),
             environment={
                 "TABLE_NAME": alarm_table.table_name
-            }
+            },
         )
 
         # Grant DynamoDB permissions to the Lambda function
@@ -147,14 +149,15 @@ class PatDowdStack(Stack):
                 type=cw.VariableType.PATTERN,
                 label="Web Health",
                 input_type=cw.VariableInputType.INPUT,
-                value="us-east-1",
-                default_value=cw.DefaultValue.value("us-east-1"),
+                value="ap-southeast-2",
+                default_value=cw.DefaultValue.value("ap-southeast-2"),
                 visible=True
-            )]
+            )],
         )
         # Create CloudWatch metrics for each URL
-        default_urls = ["www.google.com", "www.youtube.com"]  # Default URLs in case table is empty
-        for url in default_urls:
+        
+        site_urls = ["www.google.com"]
+        for url in site_urls:
             availability_metric = cw.Metric(
                 namespace="WebHelperDashboard",
                 metric_name="Availability",
@@ -251,3 +254,13 @@ class PatDowdStack(Stack):
             dashboard.add_widgets(*widget_array)
 
 
+        def get_urls(url_table):
+            # Get URLs from DynamoDB
+            response = url_table.query(
+                KeyConditionExpression='#type = :type',
+                ExpressionAttributeNames={'#type': 'type'},
+                ExpressionAttributeValues={':type': 'url'}
+            )
+            urls = [item['id'] for item in response['Items']]
+            return urls
+        
