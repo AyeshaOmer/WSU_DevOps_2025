@@ -12,7 +12,7 @@ http = urllib3.PoolManager()
 
 # Initialize DynamoDB
 dynamodb = boto3.resource('dynamodb')
-table = dynamodb.Table(os.environ['TABLE_NAME'])
+table = dynamodb.Table(os.environ['URL_TABLE_NAME'])
 
 def get_urls():
     # Get URLs from DynamoDB
