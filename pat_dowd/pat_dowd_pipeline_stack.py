@@ -13,7 +13,7 @@ class PatDowdPipelineStack(Stack):
         source = pipelines.CodePipelineSource.connection(
             "prinpa/WSU_DEVOPS_2025",
             "refactor",
-            connection_arn="arn:aws:codeconnections:ap-southeast-2:457795063739:connection/0067ee37-61b7-473e-a263-f3b975e7b3bf",
+            connection_arn="arn:aws:codeconnections:ap-southeast-2:457795063739:connection/0cad7139-90d3-481f-92cb-da19d1f50daf",
         )
 
         synth = pipelines.ShellStep(
