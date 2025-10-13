@@ -51,13 +51,4 @@ def test_url_is_gone():
     assert "urls" in data
     assert TEST_URL not in data["urls"]
 
-@pytest.fixture(autouse=True)
-def cleanup():
-    """Cleanup any remaining test URLs after each test"""
-    yield
-    # Clean up any test URLs that might remain
-    response = http.request('GET', API_ENDPOINT)
-    if response.status_code == 200:
-        data = response.json()
-        if "urls" in data and TEST_URL in data["urls"]:
-            response = http.request('delete', API_ENDPOINT+'/'+TEST_URL)
+
