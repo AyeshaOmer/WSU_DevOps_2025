@@ -59,6 +59,41 @@ class EugeneStack(Stack):
         alarm_table.grant_write_data(db_lambda)
 
         db_lambda.add_environment("TABLE_NAME", alarm_table.table_name)
+
+        # Project 2:
+        # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_dynamodb/TableV2.html
+        '''
+        target_list_table = dynamodb.TableV2(self, "TargetListTable",
+            partition_key=dynamodb.Attribute(name="url", type=dynamodb.AttributeType.STRING),
+        )
+        target_list_table.apply_removal_policy(RemovalPolicy.DESTROY)
+        target_list_table.grant_read_write_data(fn)
+
+        # 
+        crud_lambda = lambda_.Function(self, "CRUDLambda",
+            runtime=lambda_.Runtime.PYTHON_3_12,
+            timeout=Duration.minutes(10),
+            handler="CRUDLambda.lambda_handler",
+            code=lambda_.Code.from_asset("./modules"),
+        )
+        crud_lambda.add_environment("TABLE_NAME", crud_table.table_name)
+        crud_lambda.grant_read_write_data(self.crud_lambda)
+
+
+        api = apigateway.LambdaRestApi(
+            self, "CrawlerAPI",
+            handler=self.crud_lambda,
+            proxy=False,
+            rest_api_name="CrawlerTargetAPI",
+            description="CRUD API for managing target list"
+        )
+
+        targets = api.root.add_resource("targets")
+        targets.add_method("GET")    # Read all or single
+        targets.add_method("POST")   # Create
+        targets.add_method("PUT")    # Update
+        targets.add_method("DELETE") # Delete
+        '''
         
         # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_scheduler/README.html
         schedule = events_.Schedule.rate(Duration.minutes(1)) # 1 for testing, 30 for normal
@@ -144,7 +179,7 @@ class EugeneStack(Stack):
             alarms=[invoc_alarm, memory_alarm, duration_alarm]
         )
         '''
-
+        '''
         deployment_group = codedeploy.LambdaDeploymentGroup(self, "BlueGreenDeployment",
             alias=alias,
             deployment_config=codedeploy.LambdaDeploymentConfig.CANARY_10_PERCENT_5_MINUTES,
@@ -156,6 +191,7 @@ class EugeneStack(Stack):
             # )
         )
         deployment_group.apply_removal_policy(RemovalPolicy.DESTROY)
+        '''
 
 
 

@@ -142,6 +142,24 @@ def test_sns_has_multiple_endpoints(get_stack):
     protocols = {s["Properties"]["Protocol"] for s in subs.values()} # Collect protocols (email/lambda/etc.)
     assert "lambda" in protocols and "email" in protocols # Must notify both email and Lambda
 
+''' # Test for CRUDLambda - has not been tested yet
+def test_create_target_entry():
+    start_time = time.time()
+    response = crud_lambda.invoke(
+        FunctionName="CRUDLambda",
+        Payload=json.dumps({
+            "httpMethod": "POST",
+            "body": json.dumps({"url": "https://test.com", "status": "active"})
+        })
+    )
+    latency = time.time() - start_time
+    assert response["StatusCode"] == 200
+    assert latency < 1  # Example threshold
+
+# implement two integration tests - under gamma
+# convert unit test to an alpha file, and functional tests to a beta file
+'''
+
 
 '''
 Notice how app, stack, and template are done in each funciton
