@@ -146,12 +146,12 @@ class EugeneStack(Stack):
         deployment_group = codedeploy.LambdaDeploymentGroup(self, "BlueGreenDeployment",
             alias=alias,
             deployment_config=codedeploy.LambdaDeploymentConfig.CANARY_10_PERCENT_5_MINUTES,
-            alarms=[invoc_alarm, memory_alarm, duration_alarm],
+            alarms=[invoc_alarm, memory_alarm, duration_alarm]
             
-            auto_rollback=codedeploy.AutoRollbackConfig(
-                failed_deployment=True,
-                deployment_in_alarm=True
-            )
+            # auto_rollback=codedeploy.AutoRollbackConfig(
+            #     failed_deployment=True,
+            #     deployment_in_alarm=True
+            # )
         )
 
 
