@@ -126,12 +126,13 @@ class EugeneStack(Stack):
             alarm.add_alarm_action(SnsAction(topic))
 
         # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_lambda/Alias.html
+        '''
         version = fn.current_version
         alias = lambda_.Alias(self, "LambdaAlias",
             alias_name="Prod",
             version=version
         )
-
+        '''
          # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_codedeploy/LambdaDeploymentGroup.html
         '''
         deployment_group = codedeploy.LambdaDeploymentGroup(self, "BlueGreenDeployment",
@@ -140,6 +141,7 @@ class EugeneStack(Stack):
             alarms=[invoc_alarm, memory_alarm, duration_alarm]
         )
         '''
+        alias = fn.current_version.add_alias("Prod", removal_policy=RemovalPolicy.DESTROY)
         deployment_group = codedeploy.LambdaDeploymentGroup(self, "BlueGreenDeployment",
             alias=alias,
             deployment_config=codedeploy.LambdaDeploymentConfig.CANARY_10_PERCENT_5_MINUTES,
@@ -147,7 +149,8 @@ class EugeneStack(Stack):
             auto_rollback=codedeploy.AutoRollbackConfig(
                 failed_deployment=True,
                 deployment_in_alarm=True
-            )
+            ),
+            removal_policy=RemovalPolicy.DESTROY
         )
 
 
