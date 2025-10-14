@@ -181,6 +181,8 @@ class EugeneStack(Stack):
         '''
         # My code now works, to properly test it, uncomment bellow, commit changes, then try again.
             # If it don't work then ignore the deployment group and move on to project 2
+            # Tested it and I still have the same error as before, so skip and move to project 2
+        '''
         deployment_group = codedeploy.LambdaDeploymentGroup(self, "BlueGreenDeployment",
             alias=alias,
             deployment_config=codedeploy.LambdaDeploymentConfig.CANARY_10_PERCENT_5_MINUTES,
@@ -192,6 +194,7 @@ class EugeneStack(Stack):
             # )
         )
         deployment_group.apply_removal_policy(RemovalPolicy.DESTROY)
+        '''
         
 
 
