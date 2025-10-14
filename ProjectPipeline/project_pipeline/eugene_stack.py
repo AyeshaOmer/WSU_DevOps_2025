@@ -132,7 +132,7 @@ class EugeneStack(Stack):
             alias_name="Prod",
             version=version,
         )
-        alias.apply_removal_policy(RemovalPolicy.DESTROY)
+        # alias.apply_removal_policy(RemovalPolicy.DESTROY)
 
          # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_codedeploy/LambdaDeploymentGroup.html
         '''
@@ -141,6 +141,7 @@ class EugeneStack(Stack):
             deployment_config=codedeploy.LambdaDeploymentConfig.CANARY_10_PERCENT_5_MINUTES,
             alarms=[invoc_alarm, memory_alarm, duration_alarm]
         )
+        '''
         '''
         deployment_group = codedeploy.LambdaDeploymentGroup(self, "BlueGreenDeployment",
             alias=alias,
@@ -152,7 +153,7 @@ class EugeneStack(Stack):
             #    deployment_in_alarm=True
             #)
         )
-
+        '''
 
         # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_cloudwatch/Metric.html
         ''' # Create metric for lambda - ignore invocmetric = cloudwatch.Metric(, it is bellow it ath is the metric for lambda
