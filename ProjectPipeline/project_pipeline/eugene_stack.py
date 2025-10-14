@@ -155,6 +155,8 @@ class EugeneStack(Stack):
             #     deployment_in_alarm=True
             # )
         )
+        deployment_group.apply_removal_policy(RemovalPolicy.DESTROY)
+
 
 
         # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_cloudwatch/Metric.html
