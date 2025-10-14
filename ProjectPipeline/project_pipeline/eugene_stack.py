@@ -146,10 +146,11 @@ class EugeneStack(Stack):
             alias=alias,
             deployment_config=codedeploy.LambdaDeploymentConfig.CANARY_10_PERCENT_5_MINUTES,
             alarms=[invoc_alarm, memory_alarm, duration_alarm],
-            auto_rollback=codedeploy.AutoRollbackConfig(
-                failed_deployment=True,
-                deployment_in_alarm=True
-            )
+            
+            #auto_rollback=codedeploy.AutoRollbackConfig(
+            #    failed_deployment=True,
+            #    deployment_in_alarm=True
+            #)
         )
 
 
