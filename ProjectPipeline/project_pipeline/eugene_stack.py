@@ -78,10 +78,11 @@ class EugeneStack(Stack):
         ))
         # Have not tested this properly until pipeline issue is fixed
         # Metrics before deploying application
-        WebHealthInvocMetric = fn.metric_invocations()
-        WebHealthMemMetric = fn.metric("MaxMemoryUsed")
+        #WebHealthInvocMetric = fn.metric_invocations()
+        #WebHealthMemMetric = fn.metric("MaxMemoryUsed")
         WebHealthDurMetric = fn.metric_duration()
 
+        '''
         # To create alarms: https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_cloudwatch/Alarm.html
         # Expereiment the paramters needed for the alarm
         invoc_alarm = cloudwatch.Alarm(self, f"InvocationsAlarm-{construct_id}",
@@ -103,6 +104,7 @@ class EugeneStack(Stack):
             treat_missing_data=cloudwatch.TreatMissingData.NOT_BREACHING, 
             alarm_description=f"Triggers when MaxMemoryUsed > {mem_threshold_mb} MB (≈90% of configured memory)."
         )
+        '''
         duration_alarm = cloudwatch.Alarm(self, f"DurationAlarm-{construct_id}",
             metric=WebHealthDurMetric,
             comparison_operator=cloudwatch.ComparisonOperator.GREATER_THAN_THRESHOLD,
@@ -122,7 +124,7 @@ class EugeneStack(Stack):
         topic.add_subscription(sns_subscriptions.EmailSubscription("22067815@student.westernsydney.edu.au"))
         topic.add_subscription(sns_subscriptions.LambdaSubscription(db_lambda))
 
-        for alarm in [invoc_alarm, memory_alarm, duration_alarm]:
+        for alarm in [duration_alarm]: # invoc_alarm, memory_alarm, 
             alarm.add_alarm_action(SnsAction(topic))
 
         # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_lambda/Alias.html
@@ -146,7 +148,7 @@ class EugeneStack(Stack):
         deployment_group = codedeploy.LambdaDeploymentGroup(self, "BlueGreenDeployment",
             alias=alias,
             deployment_config=codedeploy.LambdaDeploymentConfig.CANARY_10_PERCENT_5_MINUTES,
-            alarms=[invoc_alarm, memory_alarm, duration_alarm]
+            alarms=[duration_alarm]
             
             # auto_rollback=codedeploy.AutoRollbackConfig(
             #     failed_deployment=True,
