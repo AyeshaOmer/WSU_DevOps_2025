@@ -113,11 +113,12 @@ class EugeneStack(Stack):
         ))
         # Have not tested this properly until pipeline issue is fixed
         # Metrics before deploying application
-        #WebHealthInvocMetric = fn.metric_invocations()
-        #WebHealthMemMetric = fn.metric("MaxMemoryUsed")
+        # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_cloudwatch/Metric.html
+        WebHealthInvocMetric = fn.metric_invocations()
+        WebHealthMemMetric = fn.metric("MaxMemoryUsed")
         WebHealthDurMetric = fn.metric_duration()
 
-        '''
+
         # To create alarms: https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_cloudwatch/Alarm.html
         # Expereiment the paramters needed for the alarm
         invoc_alarm = cloudwatch.Alarm(self, f"InvocationsAlarm-{construct_id}",
@@ -139,7 +140,7 @@ class EugeneStack(Stack):
             treat_missing_data=cloudwatch.TreatMissingData.NOT_BREACHING, 
             alarm_description=f"Triggers when MaxMemoryUsed > {mem_threshold_mb} MB (≈90% of configured memory)."
         )
-        '''
+
         duration_alarm = cloudwatch.Alarm(self, f"DurationAlarm-{construct_id}",
             metric=WebHealthDurMetric,
             comparison_operator=cloudwatch.ComparisonOperator.GREATER_THAN_THRESHOLD,
@@ -148,7 +149,7 @@ class EugeneStack(Stack):
             treat_missing_data=cloudwatch.TreatMissingData.NOT_BREACHING, 
             alarm_description="Triggers when Lambda duration exceeds 5 minutes."
         )
-        # Add sns features for these lambda alarms above
+
         # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_sns/Topic.html
         topic = sns.Topic(self, "AlarmLambdaNotificationTopic",
             display_name="Alarm Notifications for WebHealth Lambda"
@@ -159,10 +160,15 @@ class EugeneStack(Stack):
         topic.add_subscription(sns_subscriptions.EmailSubscription("22067815@student.westernsydney.edu.au"))
         topic.add_subscription(sns_subscriptions.LambdaSubscription(db_lambda))
 
-        for alarm in [duration_alarm]: # invoc_alarm, memory_alarm, 
+        for alarm in [invoc_alarm, memory_alarm,duration_alarm]: # invoc_alarm, memory_alarm, 
             alarm.add_alarm_action(SnsAction(topic))
 
         # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_lambda/Alias.html
+        '''
+        - create a temporary alias (false name) for the lambda function
+        - alias shifts traffic to the previous version of the lambda
+        - alias's purpose: points to current version of the lambda that is running
+        '''
         
         version = fn.current_version
         alias = lambda_.Alias(self, "LambdaAlias",
@@ -172,21 +178,19 @@ class EugeneStack(Stack):
         alias.apply_removal_policy(RemovalPolicy.DESTROY)
 
          # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_codedeploy/LambdaDeploymentGroup.html
-        '''
-        deployment_group = codedeploy.LambdaDeploymentGroup(self, "BlueGreenDeployment",
-            alias=alias, # alias shifts traffic to the previous version of the lambda
-            deployment_config=codedeploy.LambdaDeploymentConfig.CANARY_10_PERCENT_5_MINUTES,
-            alarms=[invoc_alarm, memory_alarm, duration_alarm]
-        )
-        '''
         # My code now works, to properly test it, uncomment bellow, commit changes, then try again.
             # If it don't work then ignore the deployment group and move on to project 2
             # Tested it and I still have the same error as before, so skip and move to project 2
         '''
+            - use to define automated rollback feature
+            - BlueGreenDeployment - takes 50% deployment
+        '''
+        '''
+        
         deployment_group = codedeploy.LambdaDeploymentGroup(self, "BlueGreenDeployment",
-            alias=alias,
+            alias=alias, # alias shifts traffic to the previous version of the lambda
             deployment_config=codedeploy.LambdaDeploymentConfig.CANARY_10_PERCENT_5_MINUTES,
-            alarms=[duration_alarm]
+            alarms=[invoc_alarm, memory_alarm, duration_alarm]
             
             # auto_rollback=codedeploy.AutoRollbackConfig(
             #     failed_deployment=True,
@@ -195,54 +199,7 @@ class EugeneStack(Stack):
         )
         deployment_group.apply_removal_policy(RemovalPolicy.DESTROY)
         '''
-        
-
-
-
-        # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_cloudwatch/Metric.html
-        ''' # Create metric for lambda - ignore invocmetric = cloudwatch.Metric(, it is bellow it ath is the metric for lambda
-        invocmetric = cloudwatch.Metric(
-            namespace="AWS/Lambda", # AWS default namespace for lambda metrics
-            metric_name="Invocations",
-            period=Duration.minutes(5),
-        )
-        WebHealthInvocMetric = fn.metric_invocations()
-        WebHealthMemMetric = fn.metric_duration()
-
-        # To create alarms: https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_cloudwatch/Alarm.html
-        # Expereiment the paramters needed for the alarm
-        invoc_alarm = cloudwatch.Alarm(self, "InvocationsAlarm",
-            id ='alarm_lambda_invocations',
-            metric=invocmetric,
-            comparrison_operator=cloudwatch.ComparisonOperator.GREATER_THAN_THRESHOLD,
-            threshold=1, # what is the correct number for the threshold based on the metric
-            evaluation_periods=1,
-        )
-
-        # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_lambda/Alias.html
-            - create a temporary alias (false name) for the lambda function
-            - alias shifts traffic to the previous version of the lambda
-            - alias's purpose: points to current version of the lambda that is running
-
-        version = fn.current_version
-        alias = lambda_.Alias(self, "LambdaAlias",
-            alias_name="Prod",
-            version=version
-        )
-        # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_codedeploy/LambdaDeploymentGroup.html
-        - use to define automated rollback feature
-        - BlueGreenDeployment - takes 50% deployment
-        deployment_group = codedeploy.LambdaDeploymentGroup(self, "BlueGreenDeployment",
-            alias=alias, # alias shifts traffic to the previous version of the lambda
-            deployment_config=LambdaDeploymentConfig.Canary20Percent5Minutes
-            alarms=[invoc_alarm, memory_alarm, duration_alarm]
-        )
-        
-
-        # Add sns features for these lambda alarms
-        '''
-
-
+       
         urls = constants.MONITORED_URLS
         # set up dashboard from stack: https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_cloudwatch/GraphWidget.html
         dashboard = cloudwatch.Dashboard(
