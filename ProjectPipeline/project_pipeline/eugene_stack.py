@@ -18,6 +18,7 @@ from aws_cdk import (
 
     aws_cloudwatch as cloudwatch,
     aws_codedeploy as codedeploy,
+    aws_apigateway as apigateway
 )
 from constructs import Construct
 from modules import constants
@@ -51,6 +52,14 @@ class EugeneStack(Stack):
         )
         db_lambda.apply_removal_policy(RemovalPolicy.DESTROY)
 
+        crud_lambda = lambda_.Function(self, "CRUDLambda",
+            runtime=lambda_.Runtime.PYTHON_3_12,
+            timeout=Duration.minutes(10),
+            handler="CRUDLambda.lambda_handler",
+            code=lambda_.Code.from_asset("./modules"),
+        )
+        crud_lambda.apply_removal_policy(RemovalPolicy.DESTROY)
+
         # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_dynamodb/TableV2.html
         alarm_table = dynamodb.TableV2(self, "AlarmTable",
             partition_key=dynamodb.Attribute(name="pk", type=dynamodb.AttributeType.STRING),
@@ -67,32 +76,25 @@ class EugeneStack(Stack):
             partition_key=dynamodb.Attribute(name="url", type=dynamodb.AttributeType.STRING),
         )
         target_list_table.apply_removal_policy(RemovalPolicy.DESTROY)
-        target_list_table.grant_read_write_data(fn)
+        target_list_table.grant_read_write_data(crud_lambda)
 
-        # 
-        crud_lambda = lambda_.Function(self, "CRUDLambda",
-            runtime=lambda_.Runtime.PYTHON_3_12,
-            timeout=Duration.minutes(10),
-            handler="CRUDLambda.lambda_handler",
-            code=lambda_.Code.from_asset("./modules"),
-        )
-        crud_lambda.add_environment("TABLE_NAME", crud_table.table_name)
-        crud_lambda.grant_read_write_data(self.crud_lambda)
+        crud_lambda.add_environment("TABLE_NAME", target_list_table.table_name)
 
 
+        # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_apigateway/LambdaRestApi.html
         api = apigateway.LambdaRestApi(
             self, "CrawlerAPI",
-            handler=self.crud_lambda,
+            handler=crud_lambda,
             proxy=False,
             rest_api_name="CrawlerTargetAPI",
             description="CRUD API for managing target list"
         )
 
-        targets = api.root.add_resource("targets")
-        targets.add_method("GET")    # Read all or single
-        targets.add_method("POST")   # Create
-        targets.add_method("PUT")    # Update
-        targets.add_method("DELETE") # Delete
+        targets_resource = api.root.add_resource("targets")
+        targets_resource.add_method("GET")
+        targets_resource.add_method("POST")
+        targets_resource.add_method("PUT")
+        targets_resource.add_method("DELETE")
 
         
         # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_scheduler/README.html
