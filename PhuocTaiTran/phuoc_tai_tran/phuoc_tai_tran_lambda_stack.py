@@ -26,8 +26,11 @@ import aws_cdk.aws_cloudwatch_actions as cw_actions
 from constructs import Construct
 
 class PhuocTaiTranLambdaStack(Stack):
-    def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
+    def __init__(self, scope: Construct, construct_id: str, stage_name: str = "default", **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
+        
+        # Store stage name for unique resource naming
+        self.stage_name = stage_name
 
         lambda_role = iam.Role(
             self, "LambdaExecutionRole",
@@ -102,7 +105,7 @@ class PhuocTaiTranLambdaStack(Stack):
         # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_cloudwatch/Dashboard.html
         # Create single CloudWatch dashboard with all URLs
         dashboard = cw.Dashboard(self, "PhuocTaiTranDashboard",
-            dashboard_name="PhuocTaiTranDashboard"
+            dashboard_name=f"PhuocTaiTranDashboard-{self.stage_name}"
         )
         
         # Use imported URLS for dashboard and alarms

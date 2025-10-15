@@ -103,11 +103,11 @@ class PhuocTaiTranStack(Stack):
         )
 
         # Create deployment stages
-        alpha = MypipelineStage(self, "alpha")
-        beta = MypipelineStage(self, "beta") 
-        gamma = MypipelineStage(self, "gamma")
-        preprod = MypipelineStage(self, "preprod")
-        prod = MypipelineStage(self, "prod")
+        alpha = MypipelineStage(self, "alpha", stage_name="alpha")
+        beta = MypipelineStage(self, "beta", stage_name="beta") 
+        gamma = MypipelineStage(self, "gamma", stage_name="gamma")
+        preprod = MypipelineStage(self, "preprod", stage_name="preprod")
+        prod = MypipelineStage(self, "prod", stage_name="prod")
 
         # Add stages to pipeline with appropriate tests and auto rollback
         # Stage 1: Alpha with unit tests before and functional tests after  
