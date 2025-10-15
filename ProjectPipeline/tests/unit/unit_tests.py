@@ -1,4 +1,4 @@
-''' # plan on implementing once pipeline is fixed
+# plan on implementing once pipeline is fixed
 import json
 import pytest
 from aws_cdk import assertions, App
@@ -80,4 +80,3 @@ def test_lambda_roles_permissions(get_stack):
             }])
         }
     })
-'''

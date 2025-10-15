@@ -62,7 +62,7 @@ class EugeneStack(Stack):
 
         # Project 2:
         # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_dynamodb/TableV2.html
-        '''
+
         target_list_table = dynamodb.TableV2(self, "TargetListTable",
             partition_key=dynamodb.Attribute(name="url", type=dynamodb.AttributeType.STRING),
         )
@@ -93,7 +93,7 @@ class EugeneStack(Stack):
         targets.add_method("POST")   # Create
         targets.add_method("PUT")    # Update
         targets.add_method("DELETE") # Delete
-        '''
+
         
         # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_scheduler/README.html
         schedule = events_.Schedule.rate(Duration.minutes(1)) # 1 for testing, 30 for normal
@@ -115,7 +115,7 @@ class EugeneStack(Stack):
         # Metrics before deploying application
         # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_cloudwatch/Metric.html
         WebHealthInvocMetric = fn.metric_invocations()
-        WebHealthMemMetric = fn.metric("MaxMemoryUsed")
+        WebHealthMemMetric = fn.metric("MaxMemoryUsed") 
         WebHealthDurMetric = fn.metric_duration()
 
 
