@@ -11,4 +11,5 @@ class MypipelineStage(Stage):
         super().__init__(scope, construct_id, **kwargs)
         
         # Pass the stage name to the lambda stack to make resource names unique
+        # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_lambda/README.html
         self.stage=PhuocTaiTranLambdaStack(self,"PhuocTaiTranApplicationStack", stage_name=stage_name or construct_id)

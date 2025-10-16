@@ -3,6 +3,7 @@ from time import time
 import publish_metric
 from constantSource import URL_MONITOR_AVAILABILITY, URL_MONITOR_LATENCY, URL_NAMESPACE, URLS
 
+# https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_cloudwatch/Metric.html
 def handler(event, context):
     print(f"Monitoring {len(URLS)} URLs")
     

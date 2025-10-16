@@ -18,6 +18,7 @@ def test_sqs_queue_created():
 #         "VisibilityTimeout": 300
 #     })
 
+# https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.assertions/README.html
 def test_lambda():
     app = core.App()
     stack = PhuocTaiTranLambdaStack(app, "phuoc-tai-tran", stage_name="test")

@@ -1,8 +1,10 @@
-import boto3
+import boto3 
 import os
 import json
 from datetime import datetime
 
+# https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_lambda/README.html
+# program flow: CloudWatch Alarm -> SNS Topic -> Lambda function (this code) -> DynamoDB
 def lambda_handler(event, context):
     try:
         # Initialize DynamoDB

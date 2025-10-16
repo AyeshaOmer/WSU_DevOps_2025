@@ -5,6 +5,7 @@ import ObtainMetrics
 threshold_avail = ObtainMetrics.avail
 threshold_latency = ObtainMetrics.latency
 
+# https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_cloudwatch/README.html
 def create_alarms(self, URL_metrics):
     alarm_avail = cloudwatch.Alarm(self, "AvailabilityAlarm",
                                    alarm_name="AvailabilityAlarm",

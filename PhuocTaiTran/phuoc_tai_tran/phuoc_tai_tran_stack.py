@@ -36,22 +36,28 @@ class PhuocTaiTranStack(Stack):
         
         # Synth step
         # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.pipelines/CodePipelineSource.html
+        # Create a shell step for building the application
         synth=pipelines.ShellStep("BuildCommands",
             input=source,
             commands=[
-                "cd PhuocTaiTran",
-                "npm install -g aws-cdk",
-                "python -m pip install -r requirements.txt",
-                "cdk synth"
+                "cd PhuocTaiTran", # Navigate to the directory containing cdk.json
+                "npm install -g aws-cdk", # Install AWS CDK CLI
+                "python -m pip install -r requirements.txt", # Install Python dependencies
+                "cdk synth" # Synth CDK app
             ],
-            primary_output_directory="PhuocTaiTran/cdk.out"
+            primary_output_directory="PhuocTaiTran/cdk.out" # Specify the output directory
         )
+        # Create the pipeline
+        # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.pipelines/CodePipeline.html
+        # Enable auto rollback on deployment failures
         pipeline = pipelines.CodePipeline(self, "PhuocTaiTranPipeline",
             synth=synth,
             # Enable auto rollback on deployment failures
             cross_account_keys=True,  # Required for rollback across accounts
             enable_key_rotation=True   # Security best practice with rollback
         )
+        # Define unit tests to run before deploying to any stage
+        # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.pipelines/ShellStep.html
         unit_test = pipelines.ShellStep("unitTest",
                                         commands=[
                                             "cd PhuocTaiTran",
@@ -66,6 +72,7 @@ class PhuocTaiTranStack(Stack):
                                         commands=[
                                             "echo 'Running Alpha functional tests...'", # print statement
                                             "# Test Lambda function deployment", # Comment
+                                            # Check if the Lambda function is deployed
                                             "aws lambda get-function --function-name PhuocTaiTranStack-alpha-PhuocTaiTranApplicationStack-PhuocTaiTranLambda* || echo 'Lambda test passed'",
                                             "echo 'Alpha functional tests completed'" # print statement
                                         ]
@@ -76,6 +83,7 @@ class PhuocTaiTranStack(Stack):
                                         commands=[
                                             "echo 'Running Beta integration tests...'", # print statement
                                             "# Test CloudWatch metrics integration", # Comment
+                                            # Verify CloudWatch metrics exist
                                             "aws cloudwatch list-metrics --namespace PhuocTaiTranProject_WSU2025 || echo 'CloudWatch integration test passed'",
                                             "echo 'Beta integration tests completed'" # print statement
                                         ]
@@ -87,6 +95,7 @@ class PhuocTaiTranStack(Stack):
                                            
                                             "echo 'Running Gamma performance tests...'", # print statement
                                             "# Test Lambda performance and CloudWatch dashboard", # Comment
+                                            # Check Lambda function performance metrics
                                             "aws cloudwatch get-dashboard --dashboard-name PhuocTaiTranDashboard || echo 'Dashboard performance test passed'",
                                             "echo 'Gamma performance tests completed'" # print statement
                                         ]
@@ -97,12 +106,14 @@ class PhuocTaiTranStack(Stack):
                                         commands=[
                                             "echo 'Running Pre-production security tests...'", # print statement
                                             "# Test IAM roles and permissions", # Comment
+                                            # Verify IAM role permissions
                                             "aws sts get-caller-identity",
                                             "echo 'Pre-production security tests completed'" # print statement
                                         ]
         )
 
         # Create deployment stages
+        # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.pipelines/Stage.html
         alpha = MypipelineStage(self, "alpha", stage_name="alpha")
         beta = MypipelineStage(self, "beta", stage_name="beta") 
         gamma = MypipelineStage(self, "gamma", stage_name="gamma")
@@ -118,8 +129,10 @@ class PhuocTaiTranStack(Stack):
         # Add rollback monitoring for Alpha
         alpha_stage.add_post(pipelines.ShellStep("AlphaRollbackMonitor",
                                                 commands=[
+                                                    # Monitor for errors and trigger rollback if needed
                                                     "echo 'Monitoring Alpha deployment for auto rollback...'",
                                                     "# Check CloudWatch alarms for Lambda errors",
+                                                    # Describe alarms for the Lambda function
                                                     "aws cloudwatch describe-alarms --state-value ALARM || echo 'No critical alarms - deployment healthy'",
                                                     "echo 'Alpha rollback monitoring completed'"
                                                 ]))

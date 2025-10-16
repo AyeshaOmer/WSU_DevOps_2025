@@ -31,7 +31,8 @@ class PhuocTaiTranLambdaStack(Stack):
         
         # Store stage name for unique resource naming
         self.stage_name = stage_name
-
+        # Create IAM role for Lambda function
+        # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_iam/README.html
         lambda_role = iam.Role(
             self, "LambdaExecutionRole",
             assumed_by=iam.ServicePrincipal("lambda.amazonaws.com"),
@@ -67,6 +68,11 @@ class PhuocTaiTranLambdaStack(Stack):
         )
 
         # Add DB Lambda to handle alarms
+        # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_lambda/README.html
+        # When CloudWatch alarms trigger → They send notifications to SNS
+        # SNS topic → Triggers the fn_db Lambda function
+        # fn_db → Processes the alarm data and stores it in DynamoDB
+        
         fn_db = _lambda.Function(
         self, "PhuocTaiTranDBLambda",
         runtime=_lambda.Runtime.PYTHON_3_12,
@@ -94,6 +100,7 @@ class PhuocTaiTranLambdaStack(Stack):
                      targets.LambdaFunction(fn_hello)]
         )
 
+        # SNS TOPIC
         #https://docs.aws.amazo# https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.k/api/v//pyth.htmlaws_snsTopic
         topic = sns.Topic(self, "Alarm notification", display_name="SNS notification for www.com")
 
@@ -102,6 +109,7 @@ class PhuocTaiTranLambdaStack(Stack):
         #add lambda subscription to SNS topic for DB logging
         topic.add_subscription(subscriptions.LambdaSubscription(fn_db))
 
+        # DASHBOARD
         # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_cloudwatch/Dashboard.html
         # Create single CloudWatch dashboard with all URLs
         dashboard = cw.Dashboard(self, "PhuocTaiTranDashboard",
@@ -138,6 +146,7 @@ class PhuocTaiTranLambdaStack(Stack):
                 )
             )
 
+            # ALARMS
             # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_cloudwatch/Alarm.html
             # Create alarm for availability drop to 0
             availability_alarm = cw.Alarm(
@@ -161,7 +170,7 @@ class PhuocTaiTranLambdaStack(Stack):
                 treat_missing_data=cw.TreatMissingData.BREACHING
             )
 
-            # Optionally, add alarm actions (e.g., SNS notification)
+            # Trigger SNS topic on alarm
             availability_alarm.add_alarm_action(cw_actions.SnsAction(topic))
             latency_alarm.add_alarm_action(cw_actions.SnsAction(topic))
 
@@ -173,27 +182,49 @@ class PhuocTaiTranLambdaStack(Stack):
             metric_name="Invocations",
             period=Duration.minutes(5),
         )
-
+        
         WHIMetric = fn.metric_invocations()
         invocation_alarm = cw.Alarm(
                 self, f"alarm_invocation",
                 metric = WHIMetric,
-                threshold=0,
-                evaluation_periods=1,
-                comparison_operator=cw.ComparisonOperator.LESS_THAN_OR_EQUAL_TO_THRESHOLD,
-                treat_missing_data=cw.TreatMissingData.BREACHING
+                threshold=5,  # Alert if less than 5 invocations in 5 minutes
+                evaluation_periods=2,  # Check for 2 consecutive periods (10 minutes)
+                comparison_operator=cw.ComparisonOperator.LESS_THAN_THRESHOLD,
+                treat_missing_data=cw.TreatMissingData.BREACHING,
+                alarm_description="Lambda function has unusually low invocation count"
             )
 
         WHNMetric = fn.metric_duration()
         duration_alarm = cw.Alarm(
                 self, f"alarm_duration",
                 metric = WHNMetric,
-                threshold=0,
-                evaluation_periods=1,
-                comparison_operator=cw.ComparisonOperator.LESS_THAN_OR_EQUAL_TO_THRESHOLD,
-                treat_missing_data=cw.TreatMissingData.BREACHING
+                threshold=30000,  # Alert if duration > 30 seconds (30,000 ms)
+                evaluation_periods=2,  # Check for 2 consecutive periods
+                comparison_operator=cw.ComparisonOperator.GREATER_THAN_THRESHOLD,
+                treat_missing_data=cw.TreatMissingData.NOT_BREACHING,
+                alarm_description="Lambda function execution duration is too high"
             )
         
+        # Add error rate alarm for better monitoring
+        error_metric = fn.metric_errors()
+        error_alarm = cw.Alarm(
+                self, f"alarm_errors",
+                metric = error_metric,
+                threshold=1,  # Alert on any errors
+                evaluation_periods=1,
+                comparison_operator=cw.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+                treat_missing_data=cw.TreatMissingData.NOT_BREACHING,
+                alarm_description="Lambda function is experiencing errors"
+            )
+        
+        # Connect Lambda alarms to SNS topic for notifications and DynamoDB logging
+        invocation_alarm.add_alarm_action(cw_actions.SnsAction(topic))
+        duration_alarm.add_alarm_action(cw_actions.SnsAction(topic))
+        error_alarm.add_alarm_action(cw_actions.SnsAction(topic))
+        
+
+        # ROLLBACK
+        # Set up CodeDeploy for Lambda with alarms for rollback
         # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_codedeploy/LambdaDeploymentGroup.html
         version = fn.current_version
         alias = _lambda.Alias(self, "LambdaAlias",
@@ -204,7 +235,7 @@ class PhuocTaiTranLambdaStack(Stack):
         deployment_group = codedeploy.LambdaDeploymentGroup(self, "BlueGreenDeployment",
             alias=alias,
             deployment_config=codedeploy.LambdaDeploymentConfig.CANARY_10_PERCENT_5_MINUTES,
-            alarms=[invocation_alarm, duration_alarm]
+            alarms=[invocation_alarm, duration_alarm, error_alarm]  # Include error alarm for rollback
         )
     
         # Note: Log groups are automatically created by Lambda functions
