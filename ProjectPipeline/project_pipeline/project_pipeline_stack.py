@@ -47,6 +47,8 @@ class ProjectPipelineStack(Stack):
                         'pip install -r requirements-dev.txt',
                         'pip install -r requirements-dev.txt pytest',
                         'pip install aws-cdk-lib constructs',
+                        'pip install boto3',
+                        'pip install moto',
                         'python -m pytest -v'
                         ],
             )

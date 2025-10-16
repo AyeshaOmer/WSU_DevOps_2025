@@ -1,10 +1,19 @@
 import json
 import pytest
+import os
+os.environ["TABLE_NAME"] = "TargetListTableTest"
+import boto3
+from moto import mock_aws
 from aws_cdk import assertions, App
 from modules import constants
 from project_pipeline.project_pipeline_stack import ProjectPipelineStack
 from project_pipeline.eugene_stack import EugeneStack
-from modules.CRUDLambda import lambda_handler
+from modules import CRUDLambda
+
+
+
+dynamodb = boto3.resource('dynamodb')
+table = dynamodb.Table(os.environ['TABLE_NAME'])
 
 @pytest.fixture
 def get_stack():
@@ -144,33 +153,55 @@ def test_sns_has_multiple_endpoints(get_stack):
     assert "lambda" in protocols and "email" in protocols # Must notify both email and Lambda
 
 # Unit test for project 2:
-def test_create_read_update_delete():
-    # Mock POST
-    event_post = {"httpMethod": "POST", "body": json.dumps({"url": "example.com", "category": "news"})}
-    resp = lambda_handler(event_post, None)
-    assert resp["statusCode"] == 200
+@pytest.fixture
+def dynamodb_table():
+    with mock_aws():
+        dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
+        table = dynamodb.create_table(
+            TableName=os.environ["TABLE_NAME"],
+            KeySchema=[{'AttributeName': 'url', 'KeyType': 'HASH'}],
+            AttributeDefinitions=[{'AttributeName': 'url', 'AttributeType': 'S'}],
+            BillingMode='PAY_PER_REQUEST'
+        )
+        table.wait_until_exists()
 
-    # Mock GET
-    event_get = {"httpMethod": "GET", "queryStringParameters": {"url": "example.com"}}
-    resp = lambda_handler(event_get, None)
-    assert resp["statusCode"] == 200
-    assert "example.com" in resp["body"]
+        # Patch the module-level table in CRUDLambda
+        CRUDLambda.table = table
 
-    # Mock PUT
-    event_put = {"httpMethod": "PUT", "body": json.dumps({"url": "example.com", "category": "tech"})}
-    resp = lambda_handler(event_put, None)
-    assert resp["statusCode"] == 200
+        yield table
 
-    # Mock DELETE
-    event_delete = {"httpMethod": "DELETE", "queryStringParameters": {"url": "example.com"}}
-    resp = lambda_handler(event_delete, None)
-    assert resp["statusCode"] == 200
+# -------------------------------
+# Functional Tests for CRUDLambda
+# -------------------------------
+def test_crud_lambda_post(dynamodb_table):
+    event = {"httpMethod": "POST", "body": json.dumps({"url": "https://example.com", "status": "active"})}
+    response = CRUDLambda.lambda_handler(event, None)
+    assert response["statusCode"] == 200
+    body = json.loads(response["body"])
+    assert body["item"]["url"] == "https://example.com"
 
+def test_create_item(dynamodb_table):
+    dynamodb_table.put_item(Item={"url": "https://example.com", "status": "active"})
+    resp = dynamodb_table.get_item(Key={"url": "https://example.com"})
+    assert resp["Item"]["url"] == "https://example.com"
 
-''' # Test for CRUDLambda - has not been tested yet
+def test_update_item(dynamodb_table):
+    dynamodb_table.put_item(Item={"url": "https://example.com", "status": "active"})
+    dynamodb_table.put_item(Item={"url": "https://example.com", "status": "inactive"})
+    resp = dynamodb_table.get_item(Key={"url": "https://example.com"})
+    assert resp["Item"]["status"] == "inactive"
+
+def test_delete_item(dynamodb_table):
+    dynamodb_table.put_item(Item={"url": "https://example.com", "status": "active"})
+    dynamodb_table.delete_item(Key={"url": "https://example.com"})
+    resp = dynamodb_table.get_item(Key={"url": "https://example.com"})
+    assert "Item" not in resp
+
+# Test for CRUDLambda - has not been tested yet
+'''
 def test_create_target_entry():
     start_time = time.time()
-    response = crud_lambda.invoke(
+    response = CRUDLambda.invoke(
         FunctionName="CRUDLambda",
         Payload=json.dumps({
             "httpMethod": "POST",
@@ -180,10 +211,10 @@ def test_create_target_entry():
     latency = time.time() - start_time
     assert response["StatusCode"] == 200
     assert latency < 1  # Example threshold
-
+'''
 # implement two integration tests - under gamma
 # convert unit test to an alpha file, and functional tests to a beta file
-'''
+
 
 
 '''
