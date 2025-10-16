@@ -29,6 +29,7 @@ def lambda_handler(event, context):
             return _response(200, {"message": "Target updated", "item": body})
 
         elif http_method == "DELETE":  # Delete
+            url = url or body.get("url")  # <--- allow body too
             if not url:
                 return _response(400, {"error": "URL required for deletion"})
             table.delete_item(Key={"url": url})

@@ -215,6 +215,24 @@ def test_create_target_entry():
 # implement two integration tests - under gamma
 # convert unit test to an alpha file, and functional tests to a beta file
 
+'''
+Progress on Project 2:
+Steps to implement project 2 on the websites
+- Go to the Lambda Function
+- Click on API Gateway then go down to Triggers and select on of the titles (API Gateway: CrawlerTargetAPI)
+Depending on Put, Get, Post
+- Go to resources and click on Either Put, get, Post, delete. Then go to the test section
+- input the data in the body section in this format, then press test:
+
+{
+  "id": "target1",
+  "name": "Example Target",
+  "url": "https://example.com"
+}
+- Then go to stages and copy the link in targets to confirm if the action is done
+
+
+'''
 
 
 '''
