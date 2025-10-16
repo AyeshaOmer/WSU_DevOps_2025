@@ -4,6 +4,7 @@ from aws_cdk import assertions, App
 from modules import constants
 from project_pipeline.project_pipeline_stack import ProjectPipelineStack
 from project_pipeline.eugene_stack import EugeneStack
+from modules.CRUDLambda import lambda_handler
 
 @pytest.fixture
 def get_stack():
@@ -142,6 +143,30 @@ def test_sns_has_multiple_endpoints(get_stack):
     protocols = {s["Properties"]["Protocol"] for s in subs.values()} # Collect protocols (email/lambda/etc.)
     assert "lambda" in protocols and "email" in protocols # Must notify both email and Lambda
 
+# Unit test for project 2:
+def test_create_read_update_delete():
+    # Mock POST
+    event_post = {"httpMethod": "POST", "body": json.dumps({"url": "example.com", "category": "news"})}
+    resp = lambda_handler(event_post, None)
+    assert resp["statusCode"] == 200
+
+    # Mock GET
+    event_get = {"httpMethod": "GET", "queryStringParameters": {"url": "example.com"}}
+    resp = lambda_handler(event_get, None)
+    assert resp["statusCode"] == 200
+    assert "example.com" in resp["body"]
+
+    # Mock PUT
+    event_put = {"httpMethod": "PUT", "body": json.dumps({"url": "example.com", "category": "tech"})}
+    resp = lambda_handler(event_put, None)
+    assert resp["statusCode"] == 200
+
+    # Mock DELETE
+    event_delete = {"httpMethod": "DELETE", "queryStringParameters": {"url": "example.com"}}
+    resp = lambda_handler(event_delete, None)
+    assert resp["statusCode"] == 200
+
+
 ''' # Test for CRUDLambda - has not been tested yet
 def test_create_target_entry():
     start_time = time.time()
@@ -171,8 +196,6 @@ def get_stack():
     template = assertions.Template.from_stack(stack)
 
 then in your other function tests do def test_lambda(get_stack): and remove the repeated lines
-
-
 
 '''
 # To do pytest in terminal: python -m pytest -v
