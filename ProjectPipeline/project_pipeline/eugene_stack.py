@@ -113,6 +113,13 @@ class EugeneStack(Stack):
                 ],
             resources=["*"],
         ))
+        crud_lambda.add_to_role_policy(iam.PolicyStatement(
+                actions=[
+                "dynamodb:*"
+                ],
+                resources=["*"],
+            )
+        )
         # Have not tested this properly until pipeline issue is fixed
         # Metrics before deploying application
         # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_cloudwatch/Metric.html
