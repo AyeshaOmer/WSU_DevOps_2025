@@ -16,6 +16,7 @@ It automatically checks the health and latency of multiple websites, stores metr
 - Install Python
 - Install VS Code
 - Install NodeJS
+
 **Setup**
   - The AWS CLI must be installed through [this link](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
   - Run the AWS Configure
@@ -31,4 +32,5 @@ It automatically checks the health and latency of multiple websites, stores metr
 ---
 
 **Deploy**
+
 Once the project is deployed, Use **cdk synth** and **cdk deploy** to deploy and run your project in the AWS console. After, always remember to destroy it using **cdk destroy**.
