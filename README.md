@@ -11,7 +11,7 @@ It automatically checks the health and latency of multiple websites, stores metr
 - SNS email alerts on downtime
 
 ---
-###Setting Up the Project
+### Setting Up the Project
 **Prerequisites**
 - Install Python
 - Install VS Code
@@ -28,6 +28,7 @@ It automatically checks the health and latency of multiple websites, stores metr
     cdk init --language python
     source .venv/bin/activate
     python -m pip install -r requirements.txt
+---
 
 **Deploy**
 Once the project is deployed, Use **cdk synth** and **cdk deploy** to deploy and run your project in the AWS console. After, always remember to destroy it using **cdk destroy**.
