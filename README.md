@@ -154,7 +154,7 @@ In **Project 2**, the system was extended with a **CRUD API Gateway** that allow
 
 Both projects were thoroughly tested using **pytest** and **moto**, ensuring all components—Lambdas, Alarms, Tables, and APIs—function as intended both locally and after deployment.  
 
-Overall, the project highlights practical implementation of DevOps concepts such as infrastructure as code, automation, serverless monitoring, continuous validation, and scalability in a cloud-native environment.
+**Overall, the project highlights practical implementation of DevOps concepts such as infrastructure as code, automation, serverless monitoring, continuous validation, and scalability in a cloud-native environment**
 ---
 
 ## References
@@ -224,4 +224,15 @@ The following official AWS and Boto3 documentation resources were used to design
 - **AWS CDK – Python Modules Overview**  
   https://docs.aws.amazon.com/cdk/api/v2/python/modules.html  
   *Used as a general reference for understanding available AWS CDK Python modules and constructs.*
+
+  ## Future Enhancements
+
+- Learn and Integrate AWS CodePipeline for full CI/CD automation
+
+## Acknowledgements
+
+Big thanks to **Ash Mam** for all the guidance, support, and helpful feedback throughout this project.  
+
+Also, a special shoutout to **Eugene** for all the help throughout the project. 
+
 
