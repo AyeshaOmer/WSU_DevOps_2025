@@ -26,7 +26,7 @@ def lambda_handler(event, context):
     qs   = event.get("queryStringParameters") or {}
     url  = (body.get("url") or qs.get("url") or "").strip()
 
-    # CREATE: POST /urls  (body: {"url": "...", ...})
+    # CREATE
     if method == "POST":
         if not url:
             return resp(400, {"error": "Missing 'url'"})
@@ -34,12 +34,12 @@ def lambda_handler(event, context):
         table.put_item(Item=item)
         return resp(200, {"message": "added", "item": item})
 
-    # READ: GET /urls   or   GET /urls?url=...
+    # READ.
     if method == "GET":
         if url:
             res = table.get_item(Key={"url": url})
             return resp(200, res.get("Item") or {})
-        # reserved word 'url' => alias with ExpressionAttributeNames
+        
         res = table.scan(
             ProjectionExpression="#u",
             ExpressionAttributeNames={"#u": "url"}
@@ -47,7 +47,7 @@ def lambda_handler(event, context):
         items = [i["url"] for i in res.get("Items", []) if "url" in i]
         return resp(200, items)
 
-    # UPDATE: PUT /urls  (body: {"url": "...", ...})
+    # UPDATE
     if method == "PUT":
         if not url:
             return resp(400, {"error": "Missing 'url'"})
@@ -55,14 +55,14 @@ def lambda_handler(event, context):
         table.put_item(Item=item)
         return resp(200, {"message": "updated", "item": item})
 
-    # DELETE: DELETE /urls?url=...   or   body: {"url": "..."}
+    # DELETE
     if method == "DELETE":
         if not url:
             return resp(400, {"error": "Missing 'url'"})
         table.delete_item(Key={"url": url})
         return resp(200, {"message": f"deleted {url}"})
 
-    # CORS preflight
+
     if method == "OPTIONS":
         return resp(200, {"ok": True})
 

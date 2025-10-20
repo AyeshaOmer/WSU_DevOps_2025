@@ -25,9 +25,9 @@ class GurshStack(Stack):
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
-        # ─────────────────────────────────────────────────────────────────────────────
+        
         # DynamoDB tables
-        # ─────────────────────────────────────────────────────────────────────────────
+        
         urls_table = dynamodb.TableV2(
             self,
             "UrlsTable",
@@ -73,9 +73,9 @@ class GurshStack(Stack):
         )
         seed_urls.node.add_dependency(urls_table)
 
-        # ─────────────────────────────────────────────────────────────────────────────
+        
         # Lambdas
-        # ─────────────────────────────────────────────────────────────────────────────
+       
         # WebHealth crawler (Project 1)
         webhealth_fn = lambda_.Function(
             self,
@@ -133,9 +133,9 @@ class GurshStack(Stack):
         mrsc_table.grant_read_write_data(db_fn)
         urls_table.grant_read_write_data(crud_fn)
 
-        # ─────────────────────────────────────────────────────────────────────────────
+        
         # EventBridge schedule (every 5 minutes)
-        # ─────────────────────────────────────────────────────────────────────────────
+        # 
         events.Rule(
             self,
             "WHInvokeRule",
@@ -144,16 +144,16 @@ class GurshStack(Stack):
             description="Run WebHealth every 5 minutes.",
         )
 
-        # ─────────────────────────────────────────────────────────────────────────────
+        
         # SNS topic + subscriptions (email + DB lambda)
-        # ─────────────────────────────────────────────────────────────────────────────
+        
         topic = sns.Topic(self, "AlertsTopic")
         topic.add_subscription(subs.EmailSubscription("22115841@student.westernsydney.edu.au"))
         topic.add_subscription(subs.LambdaSubscription(db_fn))
 
-        # ─────────────────────────────────────────────────────────────────────────────
+        
         # Per-URL metrics + alarms (Project 1)
-        # ─────────────────────────────────────────────────────────────────────────────
+      
         def url_latency_metric(url: str) -> cw.Metric:
             return cw.Metric(
                 namespace=C.NAMESPACE,
@@ -199,9 +199,9 @@ class GurshStack(Stack):
                 alarm_description=f"Availability < 1 over last 5 minutes ({url})",
             ).add_alarm_action(cw_actions.SnsAction(topic))
 
-        # ─────────────────────────────────────────────────────────────────────────────
+        
         # Dashboard (one widget per URL)
-        # ─────────────────────────────────────────────────────────────────────────────
+        
         dashboard = cw.Dashboard(self, "Dash", default_interval=Duration.days(7))
         for url in C.URLS:
             dashboard.add_widgets(
@@ -221,9 +221,9 @@ class GurshStack(Stack):
             )
         )
 
-        # ─────────────────────────────────────────────────────────────────────────────
-        # API Gateway (Project 2): /urls supports POST, GET, PUT, DELETE
-        # ─────────────────────────────────────────────────────────────────────────────
+       
+        # API Gateway (Project 2)
+      
         api = apigw.RestApi(
             self,
             "TargetsApi",
