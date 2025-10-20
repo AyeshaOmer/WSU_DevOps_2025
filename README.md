@@ -122,34 +122,34 @@ pytest -v gursh/modules/tests/unit/test_project2.py
 
 ### 5. Testing the CRUD API Gateway Endpoints (Manual)
 
-After deploying the stack, you can manually test the live API using `curl` commands.  
-Replace `<YOUR_API_ENDPOINT>` with the invoke URL from your **API Gateway** console.
+After deploying the stack, you can manually test your live API using **PowerShell commands** with `irm` (Invoke-RestMethod).  
+Replace the `$BASE` value with your actual API Gateway endpoint shown in the AWS Console.
 
 #### Set the base URL:
-BASE_URL="https://<YOUR_API_ENDPOINT>/prod"
+$BASE = "https://<YOUR_API_ENDPOINT>/prod"
 
-#### 1. POST – Add a new URL
-curl -X POST "$BASE_URL/urls"
--H "Content-Type: application/json"
--d '{"url": "https://example.com"}'
+shell
+Copy code
 
-#### 2. GET – Retrieve all URLs
-curl -X GET "$BASE_URL/urls"
+#### 1. GET – Retrieve all URLs
+irm "$BASE/urls"
 
-#### 3. PUT – Update an existing URL
-curl -X PUT "$BASE_URL/urls"
--H "Content-Type: application/json"
--d '{"url": "https://example.com", "note": "Updated entry"}'
+shell
+Copy code
 
-#### 4. DELETE – Remove a URL
-curl -X DELETE "$BASE_URL/urls?url=https://example.com"
+#### 2. DELETE – Remove a URL
+irm -Method DELETE "$BASE/urls?url=https://example.com"
 
-Each command returns a simple JSON response with:
-- `statusCode` – The HTTP status (e.g., 200)  
-- `message` – Describes the action performed  
-- `item` – The URL object (for POST/PUT)
+shell
+Copy code
 
+#### 3. POST – Add a new URL
+irm -Method POST "$BASE/urls" -ContentType "application/json"
+-Body '{"url":"https://example.com"}'
 
+shell
+Copy code
 
-
-
+#### 4. PUT – Update an existing URL
+irm -Method PUT "$BASE/urls" -ContentType "application/json"
+-Body '{"url":"https://example.com","note":"Updated entry"}'
