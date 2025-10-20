@@ -151,7 +151,7 @@ def test_sns_has_multiple_endpoints(get_stack):
 
 # Project 2:
 # -------------------------------
-# Unit Tests for CRUDLambda
+#  Tests for CRUDLambda
 # -------------------------------
 @pytest.fixture
 def dynamodb_table():
@@ -222,20 +222,6 @@ def test_crud_lambda_writes_to_dynamodb(dynamodb_table):
 
 # Test for CRUDLambda - has not been tested yet
 # has issue with 'modules.CRUDLambda' has no attribute 'invoke'
-'''
-def test_create_target_entry():
-    start_time = time.time()
-    response = CRUDLambda.invoke(
-        FunctionName="CRUDLambda",
-        Payload=json.dumps({
-            "httpMethod": "POST",
-            "body": json.dumps({"url": "https://test.com", "status": "active"})
-        })
-    )
-    latency = time.time() - start_time
-    assert response["StatusCode"] == 200
-    assert latency < 1  # Example threshold
-'''
 '''
 def test_create_target_entry():
     event = {
