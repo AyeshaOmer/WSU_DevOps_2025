@@ -128,27 +128,15 @@ Replace the `$BASE` value with your actual API Gateway endpoint shown in the AWS
 #### Set the base URL:
 $BASE = "https://<YOUR_API_ENDPOINT>/prod"
 
-shell
-Copy code
-
 #### 1. GET – Retrieve all URLs
 irm "$BASE/urls"
-
-shell
-Copy code
 
 #### 2. DELETE – Remove a URL
 irm -Method DELETE "$BASE/urls?url=https://example.com"
 
-shell
-Copy code
-
 #### 3. POST – Add a new URL
 irm -Method POST "$BASE/urls" -ContentType "application/json"
 -Body '{"url":"https://example.com"}'
-
-shell
-Copy code
 
 #### 4. PUT – Update an existing URL
 irm -Method PUT "$BASE/urls" -ContentType "application/json"
