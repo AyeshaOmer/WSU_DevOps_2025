@@ -269,6 +269,7 @@ Future Improvements:
 # Read Me File final version
 
 ## Overview - tidy up the wording
+### Project 1:
 The project uses AWS services to monitor website health. It is deployed through a pipline which allows for project to be properly tested before deployment. Checking through unit, functional, and integration tests. Once these tests are sucessfull, the project is properly deployed and is able to perform with the bellow features.
 
 This project uses AWS Lambda and a Synthetics Canary, deployed via AWS CDK (Python), to monitor external websites by tracking availability, latency, response size, and memory metrics. The Canary simulates real user visits every 5 minutes, while Lambda collects metrics and publishes them to CloudWatch dashboards. 
@@ -276,6 +277,8 @@ This project uses AWS Lambda and a Synthetics Canary, deployed via AWS CDK (Pyth
 Alarms are configured to alert users if availability drops below 1, latency is high, or response size is abnormal. SNS sends email notifications to DevOps engineers when alarms are triggered, and the alarmed metric data is logged in DynamoDB. 
 
 To extend on the new metrics memory, invocations, and duration metrics, they have been included to monitor the lambdas, with their metrics uploaded to cloudwatch. The alarms are configured to activate if the memory exceeds 90% usage, the invocations captured by the lambda function is not invoked, and the lambda duration does not exceed 5 minuetes. SNS sends email notifiactions to DevOps engineres when alarms are triggered, the alarmed metric is logged into DynamoDB, and the project automatically rolls back to the previous successful runnning version.
+
+### Project 2:
 
 ## What it does:
 - Deploys a Lambda function to perform web health checks with a simple initial message.
@@ -288,13 +291,13 @@ To extend on the new metrics memory, invocations, and duration metrics, they hav
 - Stores alarmed metric data in DynamoDB for auditing and historical tracking.
 - Centralizes configuration values (URLs, thresholds, metric names) for easy maintenance and scalability.
 - Uses a pipeline to performs unit, functional, and integration tests before project is fully sucessfully deployed
-- Rolls back to previous working version if memory, invocations, and duration fails.
+- Rolls back to previous working version if memory, invocations, and duration metrics fails, or if the unit, functional, or integration tests fail.
 
 
 ## Steps to deploy:
 - On visual studio code, type cdk synth, then cdk deploy. This will deploy the pipeline which will run unit, functional, and integration tests to check if the application is ready to run.
 
-WH Lambda:
+### Project 1: Web Health Monitoring
 - Once the pipeline is sucessfully deployed go to the lambda website called application stack.
 - Once on the lambda application stack website your code will appear in a function, and once you make a test,
 it will test the websites and print out the results of each metric at the time of testing.
@@ -313,9 +316,10 @@ it will test the websites and print out the results of each metric at the time o
         - New State Reason
         - Timestamp
 
+## Project 2: CRUD Lambda
 CRUD Lambda:
 - Once the pipeline is sucessfully deployed go to the lambda website called CRUD.
-- On the CRUD website scroll down to the API gateway, and under Triggers select on of the titles (API Gateway: CrawlerTargetAPI) depending on Put, Get, Post
+- On the CRUD website scroll down to the API gateway, and under Triggers select one of the titles (API Gateway: CrawlerTargetAPI) depending on Put, Get, Post, Delete
 - - Go to resources and click on Either Put, get, Post, delete. Then go to the test section
 - input the data in the body section in this format, then press test:
 {

@@ -95,21 +95,18 @@ class ProjectPipelineStack(Stack):
                         ],
         )
         '''
-        # if python -m pytest -v don't work do pytest
 
         # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk/Stage.html
-        # Add env to deploy in other regions, if no env is specified it will deploy to the region specified in app.py
-        # env = {'region': 'us-east-1'}
-
-        # There is no alpha, beta, gamma, or prod stages as there is an issue with deployment
+        '''
+        I attempted to have an alpha, beta, gamma for the different unit tests, but I had issues that could not be resolved in time
+        There is also supposed to be a prod stage for manual approval but that also is not working.
+        '''
         alpha = MyAppStage(self, 'alpha') # create stage
         WHpipeline.add_stage(alpha, pre=[all_tests]) # add stage to pipeline
 
         '''
         # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.pipelines/ManualApprovalStep.html
-        # implement after pipeline dployment is fixed
-        # prod is the manual approaval step bellow
-        
+        # prod is the manual approaval step bellow    
         '''
         pre=[pipelines.ManualApprovalStep("PromoteToProd",)]
 
@@ -118,7 +115,12 @@ class ProjectPipelineStack(Stack):
 
         
 
+'''
+# Comment for stage:
+        # Add env to deploy in other regions, if no env is specified it will deploy to the region specified in app.py
+        # env = {'region': 'us-east-1'}
 
+'''
 
 
 

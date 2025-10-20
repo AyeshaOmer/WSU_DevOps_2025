@@ -20,7 +20,9 @@ def get_stack():
     # template = assertions.Template.from_stack(get_stack)
     return stack
 
-
+# -------------------------------
+# Unit Tests for Application
+# -------------------------------
 def test_sqs_queue_created(get_stack):
     template = assertions.Template.from_stack(get_stack) # template is an instance of the applicatiopn stack (like a new tab on google)
 
@@ -34,16 +36,14 @@ def test_lambda_count(get_stack):
     template.resource_count_is("AWS::Lambda::Function", 3) # testing if there are two lambdas used (web health, db lambda, CRUD lambda))
 
 # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.assertions/Template.html 
-# this link has all the unit tests you can do, go to 45.50 for unit tests onthe recording
 
 # Unit Test 2: Alarm count
-'''
 def test_alarm_count(get_stack):
     template = assertions.Template.from_stack(get_stack)
     # 3 alarms per URL
-    expected_alarm_count = len(constants.MONITORED_URLS) * 3 # nomrally 4
+    expected_alarm_count = len(constants.MONITORED_URLS) * 4
     template.resource_count_is("AWS::CloudWatch::Alarm", expected_alarm_count)
-'''
+
 # Unit Test 3: Test alarm thresholds
 def test_alarm_thresholds(get_stack):
     template = assertions.Template.from_stack(get_stack)
@@ -94,6 +94,10 @@ def test_lambda_roles_permissions(get_stack):
             }])
         }
     })
+
+# -------------------------------
+# Functional Tests for Application
+# -------------------------------
 
 # Functional Test 1: Dashboard contains monitored URLs
 def test_dashboard_includes_urls(get_stack):
@@ -156,6 +160,11 @@ def dynamodb_table():
         yield table
 
 # -------------------------------
+# Integration Tests for Application 
+# -------------------------------
+
+
+# -------------------------------
 # Functional Tests for CRUDLambda
 # -------------------------------
 def test_crud_lambda_post(dynamodb_table):
@@ -181,6 +190,28 @@ def test_delete_item(dynamodb_table):
     dynamodb_table.delete_item(Key={"url": "https://example.com"})
     resp = dynamodb_table.get_item(Key={"url": "https://example.com"})
     assert "Item" not in resp
+
+
+# -------------------------------
+# Integration Tests for CRUD 
+# -------------------------------
+def test_crud_lambda_writes_to_dynamodb(dynamodb_table):
+    # Simulate a POST request to CRUD Lambda
+    event = {
+        "httpMethod": "POST",
+        "body": json.dumps({"url": "https://integration-test.com", "status": "active"})
+    }
+    response = CRUDLambda.lambda_handler(event, None)
+    
+    assert response["statusCode"] == 200
+    body = json.loads(response["body"])
+    assert body["item"]["url"] == "https://integration-test.com"
+    
+    # Verify the item exists in DynamoDB
+    resp = dynamodb_table.get_item(Key={"url": "https://integration-test.com"})
+    assert "Item" in resp
+    assert resp["Item"]["status"] == "active"
+
 
 # Test for CRUDLambda - has not been tested yet
 '''
