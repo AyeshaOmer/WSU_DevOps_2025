@@ -141,8 +141,17 @@ def test_sns_has_multiple_endpoints(get_stack):
     protocols = {s["Properties"]["Protocol"] for s in subs.values()} # Collect protocols (email/lambda/etc.)
     assert "lambda" in protocols and "email" in protocols # Must notify both email and Lambda
 
-# Unit test for project 2:
-'''
+# -------------------------------
+# Integration Tests for Application 
+# -------------------------------
+
+
+
+
+# Project 2:
+# -------------------------------
+# Unit Tests for CRUDLambda
+# -------------------------------
 @pytest.fixture
 def dynamodb_table():
     with mock_aws():
@@ -159,12 +168,6 @@ def dynamodb_table():
         CRUDLambda.table = table
 
         yield table
-'''
-
-# -------------------------------
-# Integration Tests for Application 
-# -------------------------------
-
 
 # -------------------------------
 # Functional Tests for CRUDLambda
