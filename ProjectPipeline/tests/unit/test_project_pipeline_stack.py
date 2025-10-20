@@ -94,7 +94,7 @@ def test_lambda_roles_permissions(get_stack):
             }])
         }
     })
-'''
+
 # Functional Test 1: Dashboard contains monitored URLs
 def test_dashboard_includes_urls(get_stack):
     template = assertions.Template.from_stack(get_stack)
@@ -136,7 +136,7 @@ def test_sns_has_multiple_endpoints(get_stack):
     subs = template.find_resources("AWS::SNS::Subscription")
     protocols = {s["Properties"]["Protocol"] for s in subs.values()} # Collect protocols (email/lambda/etc.)
     assert "lambda" in protocols and "email" in protocols # Must notify both email and Lambda
-'''
+
 # Unit test for project 2:
 @pytest.fixture
 def dynamodb_table():

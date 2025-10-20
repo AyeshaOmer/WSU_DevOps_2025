@@ -9,4 +9,3 @@ class MyAppStage(Stage):
     def __init__(self, scope: Construct, id: str, **kwargs) -> None:
         super().__init__(scope, id, **kwargs)
         self.Stage = EugeneStack(self, "EugeneApplicationStack")
-        # EugeneStack(self, f"EugeneApplicationStack-{id}")

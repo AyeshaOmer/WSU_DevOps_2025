@@ -102,8 +102,8 @@ class ProjectPipelineStack(Stack):
         # env = {'region': 'us-east-1'}
 
         # There is no alpha, beta, gamma, or prod stages as there is an issue with deployment
-        testing = MyAppStage(self, 'testing') # create stage
-        WHpipeline.add_stage(testing, pre=[all_tests]) # add stage to pipeline
+        alpha = MyAppStage(self, 'alpha') # create stage
+        WHpipeline.add_stage(alpha, pre=[all_tests]) # add stage to pipeline
 
         '''
         # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.pipelines/ManualApprovalStep.html

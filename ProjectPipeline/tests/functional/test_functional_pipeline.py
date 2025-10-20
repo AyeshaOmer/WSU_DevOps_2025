@@ -1,3 +1,4 @@
+'''
 import json
 import pytest
 import os
@@ -54,3 +55,5 @@ def test_sns_has_multiple_endpoints(get_stack):
     subs = template.find_resources("AWS::SNS::Subscription")
     protocols = {s["Properties"]["Protocol"] for s in subs.values()} # Collect protocols (email/lambda/etc.)
     assert "lambda" in protocols and "email" in protocols # Must notify both email and Lambda
+
+'''
