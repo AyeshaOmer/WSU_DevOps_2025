@@ -67,6 +67,23 @@ class BraydenStack(Stack):
         # Subscribe the alarm logger Lambda to the SNS topic.
         alarm_topic.add_subscription(subscriptions.LambdaSubscription(log_fn))
 
+        # --- NEW: Pushover Notifier Lambda ---
+        pushover_fn = lambda_.Function(self, "PushoverNotifierLambda",
+            runtime=lambda_.Runtime.PYTHON_3_12,
+            handler="PushoverNotifier.lambda_handler",  # References the new PushoverNotifier.py file
+            code=lambda_.Code.from_asset("./modules"),
+            timeout=Duration.seconds(15), # Give it a little extra time for the external API call
+            environment={
+                "PUSHOVER_TOKEN": "av7fgeckcjw8girs8b3ohq64xvmwy4", # <<< REPLACE THIS VALUE
+                "PUSHOVER_USER": "YOUR_PUSHOVER_USER_KEY"   # <<< REPLACE THIS VALUE
+            }
+        )
+        
+        # Subscribe the Pushover Lambda to the SNS topic.
+        # It will receive all alarm notifications, just like the logger.
+        alarm_topic.add_subscription(subscriptions.LambdaSubscription(pushover_fn))
+        # -------------------------------------
+
         # Trigger the monitoring Lambda every 5 min.
         rule = events.Rule(self, "WanMONLambdaSchedule",
             schedule=events.Schedule.rate(Duration.minutes(5))
@@ -124,5 +141,3 @@ class BraydenStack(Stack):
         availability_alarm.add_alarm_action(actions.SnsAction(alarm_topic))
         latency_alarm.add_alarm_action(actions.SnsAction(alarm_topic))
         ssl_expiry_alarm.add_alarm_action(actions.SnsAction(alarm_topic))
-
-        
