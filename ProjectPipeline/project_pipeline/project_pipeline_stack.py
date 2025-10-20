@@ -21,9 +21,8 @@ class ProjectPipelineStack(Stack):
             branch = "main",
             # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk/SecretValue.html#aws_cdk.SecretValue
             authentication = SecretValue.secrets_manager("MyToken"), # Authentication secret from AWS
-            trigger = actions_.GitHubTrigger.POLL # check your repo at constant intervals to see if the code has changed, if it has then it will trigger the pipeline and build the code onto the servers
+            trigger = actions_.GitHubTrigger.POLL # Poll: check your repo at constant intervals to see if the code has changed, if it has then it will trigger the pipeline and build the code onto the servers
         )
-        # poll is used to pipeline calls your repo to see if code is changed, if it has then it does testing and deployment
 
         # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.pipelines/ShellStep.html
         # Aim of shell step is to take the code from the pipeline and build it. It is buiilding your code in a container
@@ -31,12 +30,9 @@ class ProjectPipelineStack(Stack):
             commands = ['cd ProjectPipeline/',
                         'npm install -g aws-cdk',
                         'ls -a',
-                        'python -m pip install -r requirements.txt', # change this requirements file to the dev one
+                        'python -m pip install -r requirements.txt',
                         'cdk synth'], # to syntheisis code on to the build server
             primary_output_directory = "ProjectPipeline/cdk.out" # cdk.out is the cloud formation template is the file that gets deployed
-                # this part 'npm install -g aws-cdk', it depends, just do trial and error
-                # Find out how to add pytest to commands (pip install pytest)
-                # Add this bellow npm install -g aws-cdk:"pip install aws-cdk.pipelines",
         )
         WHpipeline = pipelines.CodePipeline(self, "WebHealthPipeline", 
                                             synth = synth)
@@ -96,7 +92,7 @@ class ProjectPipelineStack(Stack):
         )
         '''
 
-        # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk/Stage.html
+        # Stage - step in pipeline https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk/Stage.html
         '''
         I attempted to have an alpha, beta, gamma for the different unit tests, but I had issues that could not be resolved in time
         There is also supposed to be a prod stage for manual approval but that also is not working.
@@ -106,7 +102,7 @@ class ProjectPipelineStack(Stack):
 
         '''
         # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.pipelines/ManualApprovalStep.html
-        # prod is the manual approaval step bellow    
+            # prod is the manual approaval step bellow    
         '''
         pre=[pipelines.ManualApprovalStep("PromoteToProd",)]
 
@@ -114,6 +110,9 @@ class ProjectPipelineStack(Stack):
 
 
         
+
+
+
 
 '''
 # Comment for stage:

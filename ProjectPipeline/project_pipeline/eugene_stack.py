@@ -30,11 +30,8 @@ class EugeneStack(Stack):
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
-        # The code that defines your stack goes here
-
         memory_size_mb = 512
-        # function to run WHLambda file
-        # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_lambda/README.html#function-timeout
+        # To create lambda function: https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_lambda/README.html#function-timeout
         fn = lambda_.Function(self, "WHLambda",
             runtime=lambda_.Runtime.PYTHON_3_12,
             timeout=Duration.minutes(10),
@@ -60,7 +57,7 @@ class EugeneStack(Stack):
         )
         crud_lambda.apply_removal_policy(RemovalPolicy.DESTROY)
 
-        # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_dynamodb/TableV2.html
+        # To create database table https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_dynamodb/TableV2.html
         alarm_table = dynamodb.TableV2(self, "AlarmTable",
             partition_key=dynamodb.Attribute(name="pk", type=dynamodb.AttributeType.STRING),
         )
@@ -70,7 +67,7 @@ class EugeneStack(Stack):
         db_lambda.add_environment("TABLE_NAME", alarm_table.table_name)
 
         # Project 2:
-        # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_dynamodb/TableV2.html
+        # To create database table: https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_dynamodb/TableV2.html
 
         target_list_table = dynamodb.TableV2(self, "TargetListTable",
             partition_key=dynamodb.Attribute(name="url", type=dynamodb.AttributeType.STRING),
@@ -81,7 +78,7 @@ class EugeneStack(Stack):
         crud_lambda.add_environment("TABLE_NAME", target_list_table.table_name)
 
 
-        # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_apigateway/LambdaRestApi.html
+        # To create the API gateway: https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_apigateway/LambdaRestApi.html
         api = apigateway.LambdaRestApi(
             self, "CrawlerAPI",
             handler=crud_lambda,
@@ -97,7 +94,7 @@ class EugeneStack(Stack):
         targets_resource.add_method("DELETE")
 
         
-        # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_scheduler/README.html
+        # To create a schedule: https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_scheduler/README.html
         schedule = events_.Schedule.rate(Duration.minutes(1)) # 1 for testing, 30 for normal
         target = targets.LambdaFunction(fn)
         rule = events_.Rule(self, "Rule",
@@ -105,7 +102,7 @@ class EugeneStack(Stack):
             targets=[target],
             description="This rule triggers the WHLambda function every 30 minutes."
         )
-        # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_iam/PolicyStatement.html
+        # Give permissions for the IAM User: https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_iam/PolicyStatement.html
         fn.add_to_role_policy(iam.PolicyStatement(
             actions=[
                 "cloudwatch:PutMetricData",
@@ -120,30 +117,27 @@ class EugeneStack(Stack):
                 resources=["*"],
             )
         )
-        # Have not tested this properly until pipeline issue is fixed
         # Metrics before deploying application
         # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_cloudwatch/Metric.html
         WebHealthInvocMetric = fn.metric_invocations()
         WebHealthMemMetric = fn.metric("MaxMemoryUsed") 
         WebHealthDurMetric = fn.metric_duration()
 
-
         # To create alarms: https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_cloudwatch/Alarm.html
-        # Expereiment the paramters needed for the alarm
         invoc_alarm = cloudwatch.Alarm(self, f"InvocationsAlarm-{construct_id}",
             metric=WebHealthInvocMetric,
             comparison_operator=cloudwatch.ComparisonOperator.LESS_THAN_THRESHOLD,
             threshold=1,
             evaluation_periods=1,
             treat_missing_data=cloudwatch.TreatMissingData.BREACHING,
-            alarm_description="Triggers when the Lambda function is not invoked (invocations < 1)."
+            alarm_description="Triggers when the Lambda function is not invoked (invocations < 1)." # check if the lambda has runned
         )
 
         mem_threshold_mb = int(memory_size_mb * 0.9)
         memory_alarm = cloudwatch.Alarm(self, f"MemoryAlarm-{construct_id}",
             metric=WebHealthMemMetric,
             comparison_operator=cloudwatch.ComparisonOperator.GREATER_THAN_THRESHOLD,
-            threshold=mem_threshold_mb, # what is the correct number for the threshold based on the metric
+            threshold=mem_threshold_mb,
             evaluation_periods=1,
             treat_missing_data=cloudwatch.TreatMissingData.NOT_BREACHING, 
             alarm_description=f"Triggers when MaxMemoryUsed > {mem_threshold_mb} MB (≈90% of configured memory)."
@@ -158,12 +152,12 @@ class EugeneStack(Stack):
             alarm_description="Triggers when Lambda duration exceeds 5 minutes."
         )
 
-        # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_sns/Topic.html
+        # Topics - used to publish message of alarm https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_sns/Topic.html
         topic = sns.Topic(self, "AlarmLambdaNotificationTopic",
             display_name="Alarm Notifications for WebHealth Lambda"
         )
             
-        # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_sns/Subscription.html
+        # Subscriptions - who recives messages https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_sns/Subscription.html
         # Used the prefered ITopic.addSubscription()
         topic.add_subscription(sns_subscriptions.EmailSubscription("22067815@student.westernsydney.edu.au"))
         topic.add_subscription(sns_subscriptions.LambdaSubscription(db_lambda))
@@ -177,7 +171,6 @@ class EugeneStack(Stack):
         - alias shifts traffic to the previous version of the lambda
         - alias's purpose: points to current version of the lambda that is running
         '''
-        
         version = fn.current_version
         alias = lambda_.Alias(self, "LambdaAlias",
             alias_name="Prod",
@@ -185,17 +178,11 @@ class EugeneStack(Stack):
         )
         alias.apply_removal_policy(RemovalPolicy.DESTROY)
 
-         # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_codedeploy/LambdaDeploymentGroup.html
-        # My code now works, to properly test it, uncomment bellow, commit changes, then try again.
-            # If it don't work then ignore the deployment group and move on to project 2
-            # Tested it and I still have the same error as before, so skip and move to project 2
-        '''
-            - use to define automated rollback feature
-            - BlueGreenDeployment - takes 50% deployment
-        '''
-        '''
+        # Define autorollback feature:
+        # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_codedeploy/LambdaDeploymentGroup.html
+
         
-        deployment_group = codedeploy.LambdaDeploymentGroup(self, "BlueGreenDeployment",
+        deployment_group = codedeploy.LambdaDeploymentGroup(self, "BlueGreenDeployment", # BlueGreenDeployment - takes 50% deployment
             alias=alias, # alias shifts traffic to the previous version of the lambda
             deployment_config=codedeploy.LambdaDeploymentConfig.CANARY_10_PERCENT_5_MINUTES,
             alarms=[invoc_alarm, memory_alarm, duration_alarm]
@@ -206,7 +193,7 @@ class EugeneStack(Stack):
             # )
         )
         deployment_group.apply_removal_policy(RemovalPolicy.DESTROY)
-        '''
+
        
         urls = constants.MONITORED_URLS
         # set up dashboard from stack: https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_cloudwatch/GraphWidget.html
@@ -296,6 +283,16 @@ class EugeneStack(Stack):
             )
 
             dashboard.add_widgets(widget)
+
+
+
+
+
+
+
+
+
+
 
 
 ''' No more recordings for the tutoral anymore, so take your own notes

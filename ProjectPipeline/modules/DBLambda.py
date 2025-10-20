@@ -11,12 +11,12 @@ def db_lambda_handler(event, context):
         sns_message = json.loads(record['Sns']['Message'])
 
         item = {
-            'pk': f"{sns_message.get('AlarmName')}#{datetime.utcnow().isoformat()}",
-            'AlarmName': sns_message.get('AlarmName'),
+            'pk': f"{sns_message.get('AlarmName')}#{datetime.utcnow().isoformat()}", # primary key
+            'AlarmName': sns_message.get('AlarmName'), # name of the CloudWatch alarm that triggered the SNS notification.
             'AlarmDescription': sns_message.get('AlarmDescription'),
-            'NewStateReason': sns_message.get('NewStateReason'),
-            'MetricName': sns_message.get('Trigger', {}).get('MetricName'),
-            'Dimensions': json.dumps(sns_message.get('Trigger', {}).get('Dimensions', [])),
+            'NewStateReason': sns_message.get('NewStateReason'), # why the alarm state was changed
+            'MetricName': sns_message.get('Trigger', {}).get('MetricName'), # specific metric triggered
+            'Dimensions': json.dumps(sns_message.get('Trigger', {}).get('Dimensions', [])), # URLs
             'Timestamp': datetime.utcnow().isoformat()
         }
         table.put_item(Item=item)
@@ -26,14 +26,3 @@ def db_lambda_handler(event, context):
         'statusCode': 200,
         'body': json.dumps('Alarm metrics written to DynamoDB')
     }
-
-
-    '''
-    To do list:
-    - Create a new SNS topic using information from alarms
-    SNS triggers email subscription and lambda subscription (both found in SNS subscription construct)
-    Write alarm information into Dynamo DB using lambda function (DBLambda.py)
-    
-    Whats in stack:
-        alarms, SNS topic
-    '''

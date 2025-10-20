@@ -1,4 +1,4 @@
-# https://docs.aws.amazon.com/cdk/v2/guide/stages.html
+# Stage - step in pipeline https://docs.aws.amazon.com/cdk/v2/guide/stages.html
 
 from aws_cdk import Stage
 from constructs import Construct

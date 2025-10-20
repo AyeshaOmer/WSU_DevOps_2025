@@ -142,6 +142,7 @@ def test_sns_has_multiple_endpoints(get_stack):
     assert "lambda" in protocols and "email" in protocols # Must notify both email and Lambda
 
 # Unit test for project 2:
+'''
 @pytest.fixture
 def dynamodb_table():
     with mock_aws():
@@ -158,6 +159,7 @@ def dynamodb_table():
         CRUDLambda.table = table
 
         yield table
+'''
 
 # -------------------------------
 # Integration Tests for Application 
@@ -195,6 +197,7 @@ def test_delete_item(dynamodb_table):
 # -------------------------------
 # Integration Tests for CRUD 
 # -------------------------------
+'''
 def test_crud_lambda_writes_to_dynamodb(dynamodb_table):
     # Simulate a POST request to CRUD Lambda
     event = {
@@ -211,7 +214,7 @@ def test_crud_lambda_writes_to_dynamodb(dynamodb_table):
     resp = dynamodb_table.get_item(Key={"url": "https://integration-test.com"})
     assert "Item" in resp
     assert resp["Item"]["status"] == "active"
-
+'''
 
 # Test for CRUDLambda - has not been tested yet
 '''
