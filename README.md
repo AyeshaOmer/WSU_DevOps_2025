@@ -155,6 +155,7 @@ In **Project 2**, the system was extended with a **CRUD API Gateway** that allow
 Both projects were thoroughly tested using **pytest** and **moto**, ensuring all components—Lambdas, Alarms, Tables, and APIs—function as intended both locally and after deployment.  
 
 **Overall, the project highlights practical implementation of DevOps concepts such as infrastructure as code, automation, serverless monitoring, continuous validation, and scalability in a cloud-native environment**
+
 ---
 
 ## References
