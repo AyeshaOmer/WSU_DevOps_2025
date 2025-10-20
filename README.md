@@ -76,5 +76,5 @@ It extends the basic canary Lambda into a **web crawler** that periodically test
 
 Run all the unit tests for Project 1 tests locally with:
 ```bash
-pytest -v 
+ pytest -v c:\Users\Guran\Documents\NewProject\WSU_DevOps_2025\Gursh\gursh\modules\tests\unit\test_application.py
 
