@@ -1,26 +1,23 @@
-# WSU_DevOps_2025
-This is a repo for the 2025 batch of DevOp Course. 
+# AWS CDK Canary Monitor Project
 
-📖 Overview
+This project uses AWS Cloud Development Kit (CDK) with Python to deploy a Lambda function that monitors the availability, latency, and response size of a website (`https://westernsydney.edu.au`). The Lambda runs every 5 minutes triggered by an EventBridge scheduled rule.
 
-This is a cdk project that runs in lambda. This project is about web monitoring where you are able to choose a URL to monitor for HTML status as well as latency. The Lambda will published the results to the cloudwatch function in AWS.
+---
 
-🚀 Getting Started
-Prerequisites
-You'll need the following installed:
-* AWS CLI: Configured with your AWS credentials.
-* AWS CDK: npm install -g aws-cdk
-* Python 3.9+
-* Pipenv or pip
+## Project Overview
 
-Setup Guide
+- The Lambda function performs an HTTP GET request to the target URL and reports:
+  - HTTP status code
+  - Latency (response time in seconds)
+  - Response size in bytes
+- The CDK stack provisions:
+  - The Lambda function
+  - A scheduled EventBridge rule that triggers the Lambda every 5 minutes
 
-1. Clone the repository
-2. Do cdk inti
-3. Activate a Python virtual environment
-4. Install the required Python dependencies (pip install -r requirements.txt)
-5. Do cdk bootstrap
-6. In the WanMONLambda.py file chagne the WEBSITE to whatever the website you want monitored
-7. cdk synth
-8. cdk deploy 
+---
+
+## Getting Started
+
+This project is set up like a standard Python CDK project. It includes a virtual environment for managing dependencies.
+
 
