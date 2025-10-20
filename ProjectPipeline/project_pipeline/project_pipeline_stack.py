@@ -122,7 +122,12 @@ class ProjectPipelineStack(Stack):
         '''
         # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.pipelines/ManualApprovalStep.html
         # implement after pipeline dployment is fixed
-        pre=[pipelines.ManualApprovalStep("PromoteToProd",)]
+        # pre=[pipelines.ManualApprovalStep("PromoteToProd",)]
+        prod = MyAppStage(self, 'Prod')
+        WHpipeline.add_stage(
+            prod,
+            pre=[pipelines.ManualApprovalStep("PromoteToProd")]
+        )
 
         
 
