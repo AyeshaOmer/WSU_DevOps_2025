@@ -226,6 +226,52 @@ The following official AWS and Boto3 documentation resources were used to design
   https://docs.aws.amazon.com/cdk/api/v2/python/modules.html  
   *Used as a general reference for understanding available AWS CDK Python modules and constructs.*
 
+  ---
+
+  ## Project 2 (CRUD API Gateway Service)
+
+The following official AWS and Boto3 documentation resources were used to design and implement **Project 2 (CRUD API Gateway Service):**
+
+### Amazon API Gateway – Lambda Proxy Integration  
+https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-lambda-proxy-integrations.html  
+Used to integrate API Gateway with Lambda functions and pass HTTP requests (method, body, and parameters) directly to the handler.
+
+### Amazon API Gateway – CORS Configuration  
+https://docs.aws.amazon.com/apigateway/latest/developerguide/how-to-cors.html  
+Used to configure cross-origin resource sharing by setting `Access-Control-Allow-*` headers for the CRUD API responses.
+
+### Amazon API Gateway – Supported HTTP Methods  
+https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-method-settings-method-request.html  
+Used to define REST methods (GET, POST, PUT, DELETE, OPTIONS) to perform CRUD operations.
+
+### Amazon DynamoDB – Table Resource (Boto3)  
+https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/dynamodb.html#table  
+Used to access and interact with the DynamoDB table that stores website URLs.
+
+### Amazon DynamoDB – put_item  
+https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/dynamodb/client/put_item.html  
+Used to add or update a record in the DynamoDB URLs table.
+
+### Amazon DynamoDB – get_item  
+https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/dynamodb/client/get_item.html  
+Used to retrieve a specific URL record from DynamoDB.
+
+### Amazon DynamoDB – scan  
+https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/dynamodb/client/scan.html  
+Used to retrieve all URLs from the DynamoDB table.
+
+### Amazon DynamoDB – delete_item  
+https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/dynamodb/client/delete_item.html  
+Used to remove a URL record from the DynamoDB table.
+
+### AWS Lambda – Python Handler  
+https://docs.aws.amazon.com/lambda/latest/dg/python-handler.html  
+Explains how the Lambda function receives and processes event payloads from API Gateway using the proxy integration format.
+
+### AWS CDK – Python Modules Overview  
+https://docs.aws.amazon.com/cdk/api/v2/python/modules.html  
+Used as a general reference for AWS CDK constructs connecting API Gateway, Lambda, and DynamoDB.
+
   ## Future Enhancements
 
 - Learn and Integrate AWS CodePipeline for full CI/CD automation
