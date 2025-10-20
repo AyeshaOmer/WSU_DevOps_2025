@@ -268,25 +268,35 @@ Future Improvements:
 
 # Read Me File final version
 
-## Overview
+## Overview - tidy up the wording
+The project uses AWS services to monitor website health. It is deployed through a pipline which allows for project to be properly tested before deployment. Checking through unit, functional, and integration tests. Once these tests are sucessfull, the project is properly deployed and is able to perform with the bellow features.
+
 This project uses AWS Lambda and a Synthetics Canary, deployed via AWS CDK (Python), to monitor external websites by tracking availability, latency, response size, and memory metrics. The Canary simulates real user visits every 5 minutes, while Lambda collects metrics and publishes them to CloudWatch dashboards. 
-Alarms are configured to alert users if availability drops below 1, latency is high, response size is abnormal, or if the memory of a website exceeds a certain amount of RAM - making the website slow/unresponsive due to pressure added onto the servers. 
-SNS sends email notifications to DevOps engineers when alarms are triggered, and the alarmed metric data is logged in DynamoDB. The project also centralizes configuration values, such as URLs, thresholds, and metric names, for easy maintenance and scalability.
+
+Alarms are configured to alert users if availability drops below 1, latency is high, or response size is abnormal. SNS sends email notifications to DevOps engineers when alarms are triggered, and the alarmed metric data is logged in DynamoDB. 
+
+To extend on the new metrics memory, invocations, and duration metrics, they have been included to monitor the lambdas, with their metrics uploaded to cloudwatch. The alarms are configured to activate if the memory exceeds 90% usage, the invocations captured by the lambda function is not invoked, and the lambda duration does not exceed 5 minuetes. SNS sends email notifiactions to DevOps engineres when alarms are triggered, the alarmed metric is logged into DynamoDB, and the project automatically rolls back to the previous successful runnning version.
 
 ## What it does:
 - Deploys a Lambda function to perform web health checks with a simple initial message.
 - Sets up a Synthetics Canary that simulates user visits every 5 minutes to monitor websites.
-- Collects availability, latency, response size, and memory metrics for multiple websites (e.g., Google, YouTube, Instagram).
+- Collects availability, latency, and response size metrics for multiple websites (e.g., Google, YouTube, Instagram).
+- Collects memory, invocations, and duration metrics for lambdas
 - Publishes metrics to CloudWatch and displays results on dashboards.
-- Configures alarms for metric thresholds (availability <1, high latency, abnormal response size, high memory).
+- Configures alarms for metric thresholds (availability <1, high latency, abnormal response size, high memory, low invocations, high duration).
 - Sends SNS email notifications to DevOps engineers when alarms are triggered.
 - Stores alarmed metric data in DynamoDB for auditing and historical tracking.
 - Centralizes configuration values (URLs, thresholds, metric names) for easy maintenance and scalability.
+- Uses a pipeline to performs unit, functional, and integration tests before project is fully sucessfully deployed
+- Rolls back to previous working version if memory, invocations, and duration fails.
+
 
 ## Steps to deploy:
-- On visual studio code, type cdk synth, then cdk deploy. This will deploy the stack code onto
-the Lambda website.
--  Once on the lambda website your code will appear in a function, and once you make a test,
+- On visual studio code, type cdk synth, then cdk deploy. This will deploy the pipeline which will run unit, functional, and integration tests to check if the application is ready to run.
+
+WH Lambda:
+- Once the pipeline is sucessfully deployed go to the lambda website called application stack.
+- Once on the lambda application stack website your code will appear in a function, and once you make a test,
 it will test the websites and print out the results of each metric at the time of testing.
 - After testing, go to the Cloudwatch dashboard and you will see three graphs each representing a metric, with real time readings on the metrics of each website.
 - SNS:
@@ -302,6 +312,23 @@ it will test the websites and print out the results of each metric at the time o
         - Metric Name
         - New State Reason
         - Timestamp
+
+CRUD Lambda:
+- Once the pipeline is sucessfully deployed go to the lambda website called CRUD.
+- On the CRUD website scroll down to the API gateway, and under Triggers select on of the titles (API Gateway: CrawlerTargetAPI) depending on Put, Get, Post
+- - Go to resources and click on Either Put, get, Post, delete. Then go to the test section
+- input the data in the body section in this format, then press test:
+{
+  "id": "target1",
+  "name": "Example Target",
+  "url": "https://example.com"
+}
+- Then go to stages and copy the link in targets to confirm if the action is done
+
+- DB Lambda:
+    - Go to DBLambda on the lambda website, then go to tables where you can see your table that you created in the stack.
+    - Click on explore table options, and scroll down until you get items returned, in this section it should show the website data in the format above.
+
 
 ## Quality Characteristics:
 - Security: 
@@ -329,5 +356,5 @@ it will test the websites and print out the results of each metric at the time o
     - Results are visible in CloudWatch dashboards, and the code is modular (separate Lambda handler, metric publisher, and CDK stack), making it easy to extend with more sites or metrics in the future.
     - Alarm emails include direct links to the alarm in the AWS Management Console for quick access and investigation.
 
-## Future Imporvements:
-- Implement pipeline
+## Future Improvements:
+- Resolve issue with auto rollback not working, due to S3 bucket

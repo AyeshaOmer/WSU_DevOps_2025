@@ -28,8 +28,8 @@ def lambda_handler(event, context):
             table.put_item(Item=body)
             return _response(200, {"message": "Target updated", "item": body})
 
-        elif http_method == "DELETE":  # Delete
-            url = url or body.get("url")  # <--- allow body too
+        elif http_method == "DELETE":  # Delete by URL or body of url
+            url = url or body.get("url")
             if not url:
                 return _response(400, {"error": "URL required for deletion"})
             table.delete_item(Key={"url": url})

@@ -32,8 +32,8 @@ class ProjectPipelineStack(Stack):
                         'npm install -g aws-cdk',
                         'ls -a',
                         'python -m pip install -r requirements.txt', # change this requirements file to the dev one
-                        'cdk synth'],
-            primary_output_directory = "ProjectPipeline/cdk.out"
+                        'cdk synth'], # to syntheisis code on to the build server
+            primary_output_directory = "ProjectPipeline/cdk.out" # cdk.out is the cloud formation template is the file that gets deployed
                 # this part 'npm install -g aws-cdk', it depends, just do trial and error
                 # Find out how to add pytest to commands (pip install pytest)
                 # Add this bellow npm install -g aws-cdk:"pip install aws-cdk.pipelines",
@@ -42,6 +42,7 @@ class ProjectPipelineStack(Stack):
                                             synth = synth)
 
         # All tests (unit/functional)
+        '''
         all_tests = pipelines.ShellStep("allTests",
             commands = ['cd ProjectPipeline/',
                         'pip install -r requirements-dev.txt',
@@ -51,23 +52,73 @@ class ProjectPipelineStack(Stack):
                         'pip install moto',
                         'python -m pytest -v'
                         ],
-            )
+        )
+        '''
+        # Unit Tests
+        unit_tests = pipelines.ShellStep("UnitTests",
+            commands = ['cd ProjectPipeline/',
+                        'pip install -r requirements-dev.txt',
+                        'pip install -r requirements-dev.txt pytest',
+                        'pip install aws-cdk-lib constructs',
+                        'pip install boto3',
+                        'pip install moto',
+                        'pip install pytest',
+                        'pytest tests/unit -v'
+                        ],
+        )
 
+        # Functional Tests
+        functional_tests = pipelines.ShellStep("FunctionalTests",
+            commands = ['cd ProjectPipeline/',
+                        'pip install -r requirements-dev.txt',
+                        'pip install -r requirements-dev.txt pytest',
+                        'pip install aws-cdk-lib constructs',
+                        'pip install boto3',
+                        'pip install moto',
+                        'pip install pytest',
+                        'pytest tests/functional -v'
+                        ],
+        )
+        # Integration Tests
+        '''
+        integration_tests = pipelines.ShellStep("IntegrationTests",
+            commands = ['cd ProjectPipeline/',
+                        'pip install -r requirements-dev.txt',
+                        'pip install -r requirements-dev.txt pytest',
+                        'pip install aws-cdk-lib constructs',
+                        'pip install boto3',
+                        'pip install moto',
+                        'pip install pytest',
+                        'pytest tests/integrational -v'
+                        ],
+        )
+        '''
         # if python -m pytest -v don't work do pytest
 
         # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk/Stage.html
         # Add env to deploy in other regions, if no env is specified it will deploy to the region specified in app.py
         # env = {'region': 'us-east-1'}
 
+        ''' # This works for all tests, but lets make the tests modular
         alpha = MyAppStage(self, 'alpha') # create stage # teacher did MyPipelineStage
         WHpipeline.add_stage(alpha, pre=[all_tests]) # add stage to pipeline
+        '''
+        alpha = MyAppStage(self, 'alpha')
+        WHpipeline.add_stage(alpha, pre=[unit_tests])
 
+        beta = MyAppStage(self, 'beta')
+        WHpipeline.add_stage(beta, pre=[functional_tests])
+
+        '''
+        gamma = MyAppStage(self, 'gamma')
+        WHpipeline.add_stage(gamma, pre=[integration_tests])
+        '''
         '''
         beta =
 
         gamma = 
 
-        prod = 
+        prod = # prod is the manual approaval step bellow
         '''
         # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.pipelines/ManualApprovalStep.html
         # implement after pipeline dployment is fixed
@@ -146,7 +197,4 @@ Recording:
 - Refer to commented parts of code in eugene_stack, line 79
 - Memory approaval in pipeline_stack
 
-
-Project 2:
-- Note where the code came from in the API documentaiton, chat gpt is fine, but you must know how to read the documentaiotn
 '''

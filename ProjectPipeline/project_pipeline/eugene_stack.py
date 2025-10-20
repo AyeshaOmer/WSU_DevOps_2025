@@ -139,7 +139,6 @@ class EugeneStack(Stack):
             alarm_description="Triggers when the Lambda function is not invoked (invocations < 1)."
         )
 
-
         mem_threshold_mb = int(memory_size_mb * 0.9)
         memory_alarm = cloudwatch.Alarm(self, f"MemoryAlarm-{construct_id}",
             metric=WebHealthMemMetric,
@@ -169,7 +168,7 @@ class EugeneStack(Stack):
         topic.add_subscription(sns_subscriptions.EmailSubscription("22067815@student.westernsydney.edu.au"))
         topic.add_subscription(sns_subscriptions.LambdaSubscription(db_lambda))
 
-        for alarm in [invoc_alarm, memory_alarm,duration_alarm]: # invoc_alarm, memory_alarm, 
+        for alarm in [invoc_alarm, memory_alarm,duration_alarm]:
             alarm.add_alarm_action(SnsAction(topic))
 
         # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_lambda/Alias.html
@@ -417,8 +416,6 @@ table = dynamodb.Table(self, "Table",
 '''
 Feedback for work so far: 26/8/25
 - read me file think of it as a user manual from the perspective of a user
-- think about how response size is helpful in monitoring website health
-- move websites to constants file as that is used in multiple files
 '''
 
 

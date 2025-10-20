@@ -10,8 +10,6 @@ from project_pipeline.project_pipeline_stack import ProjectPipelineStack
 from project_pipeline.eugene_stack import EugeneStack
 from modules import CRUDLambda
 
-
-
 dynamodb = boto3.resource('dynamodb')
 table = dynamodb.Table(os.environ['TABLE_NAME'])
 
@@ -22,19 +20,6 @@ def get_stack():
     # template = assertions.Template.from_stack(get_stack)
     return stack
 
-# example tests. To run these tests, uncomment this file along with the example
-# resource in project_pipeline/project_pipeline_stack.py
-'''
-def test_sqs_queue_created():
-    app = App()
-    stack = ProjectPipelineStack(app, "project-pipeline")
-    template = assertions.Template.from_stack(get_stack)
-    return stack
-
-#     template.has_resource_properties("AWS::SQS::Queue", {
-#         "VisibilityTimeout": 300
-#     })
-'''
 
 def test_sqs_queue_created(get_stack):
     template = assertions.Template.from_stack(get_stack) # template is an instance of the applicatiopn stack (like a new tab on google)
@@ -109,7 +94,7 @@ def test_lambda_roles_permissions(get_stack):
             }])
         }
     })
-
+'''
 # Functional Test 1: Dashboard contains monitored URLs
 def test_dashboard_includes_urls(get_stack):
     template = assertions.Template.from_stack(get_stack)
@@ -151,7 +136,7 @@ def test_sns_has_multiple_endpoints(get_stack):
     subs = template.find_resources("AWS::SNS::Subscription")
     protocols = {s["Properties"]["Protocol"] for s in subs.values()} # Collect protocols (email/lambda/etc.)
     assert "lambda" in protocols and "email" in protocols # Must notify both email and Lambda
-
+'''
 # Unit test for project 2:
 @pytest.fixture
 def dynamodb_table():
@@ -235,18 +220,7 @@ Depending on Put, Get, Post
 '''
 
 
-'''
-Notice how app, stack, and template are done in each funciton
-do:
-@pytest.fixtures
-def get_stack():
-    app = core.App()
-    stack = EugeneStack(app, "eugene")
-    template = assertions.Template.from_stack(stack)
 
-then in your other function tests do def test_lambda(get_stack): and remove the repeated lines
-
-'''
 # To do pytest in terminal: python -m pytest -v
 
 '''
@@ -257,4 +231,35 @@ Do unit tests on: (add two more)
 
 Do functional tests on: (add five more)
 
+'''
+
+''' #  Pipeline stages and unit tests
+Four pipeline stages: source, build, test, deploy
+- source: get code from github
+- build: are from code build of pipeline
+- test: are from code build of pipeline
+- deploy: deploy to aws if tests pass
+
+Source and Build:
+- source: application source code
+- build: build server that compiles your code, does unit tests
+
+Build and Test Units:
+- alpha, beta, gamma, prod
+
+Stages:
+- an instance of our application stack
+- when creating stack you imoprt stack, when creating stage import stage
+- when a stage runs your application is deployed. it can be deployed on any of the servers in other countries
+
+Waves:
+- can perform alpha, beta, gamma tests seperately on multiple regions. this is the environment variable when creating stage
+
+
+Unit Tests vs Functional Tests:
+- Unit Test: Tests individual components (functions, classes, or modules) in isolation.
+- Functional Tests: Tests how multiple components work together to perform a complete user-facing function.
+- Unit tests: test constructs in your application E.g. lambda, the application should have two lambdas nothing more or less.
+- Functional Tests: tests if the constructs you have provided provide the functionality you expect E.g. Dynamo Lambda writes to dynamo DB
+- Integration Tests: when two services are communicating with another - are they talking together correctly, Lambda needs to write to a Dynamo DB
 '''
