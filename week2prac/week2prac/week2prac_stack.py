@@ -2,6 +2,7 @@ from aws_cdk import (
     Stack,
     Duration,
     RemovalPolicy,
+    CfnOutput,
     aws_lambda as lambda_,
     aws_events as events,
     aws_events_targets as targets,
@@ -11,6 +12,7 @@ from aws_cdk import (
     aws_sns_subscriptions as subs,
     aws_cloudwatch_actions as cw_actions,
     aws_dynamodb as dynamodb,
+    aws_apigateway as apigateway,
 )
 from constructs import Construct
 from pathlib import Path
@@ -34,6 +36,17 @@ class Week2PracStack(Stack):
         # Per-stage suffix to avoid name collisions across Beta/Gamma/Prod (and old stacks)
         suffix = self.stack_name  # e.g., "Beta-WebHealthStack"
 
+        # Sites DynamoDB Table for CRUD API (created early so monitor can reference it)
+        sites_table = dynamodb.Table(
+            self,
+            "SitesTable",
+            table_name=f"Sites-{suffix}",
+            partition_key=dynamodb.Attribute(name="site_id", type=dynamodb.AttributeType.STRING),
+            billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST,
+            table_class=dynamodb.TableClass.STANDARD,
+        )
+        sites_table.apply_removal_policy(RemovalPolicy.DESTROY)
+
         monitor_fn = lambda_.Function(
             self,
             "MonitorNYT",
@@ -41,7 +54,10 @@ class Week2PracStack(Stack):
             handler="monitor.lambda_handler",
             code=lambda_.Code.from_asset(lambda_dir),
             timeout=Duration.seconds(30),
-            environment={"METRIC_NAMESPACE": METRIC_NAMESPACE},
+            environment={
+                "METRIC_NAMESPACE": METRIC_NAMESPACE,
+                "SITES_TABLE_NAME": sites_table.table_name
+            },
         )
 
         monitor_fn.add_to_role_policy(
@@ -51,6 +67,9 @@ class Week2PracStack(Stack):
                 conditions={"StringEquals": {"cloudwatch:namespace": METRIC_NAMESPACE}},
             )
         )
+        
+        # Grant DynamoDB read access to monitor Lambda
+        sites_table.grant_read_data(monitor_fn)
 
         events.Rule(
             self,
@@ -100,6 +119,68 @@ class Week2PracStack(Stack):
         )
         alarm_log_table.grant_write_data(log_lambda)
         alarm_topic.add_subscription(subs.LambdaSubscription(log_lambda))
+
+        # CRUD Lambda Function
+        crud_api_dir = str(base_dir / "crud_api")
+        sites_crud_lambda = lambda_.Function(
+            self,
+            "SitesCrudLambda",
+            runtime=lambda_.Runtime.PYTHON_3_12,
+            handler="sites_crud.lambda_handler",
+            code=lambda_.Code.from_asset(crud_api_dir),
+            timeout=Duration.seconds(60),  # Increased for CloudWatch operations
+            environment={
+                "SITES_TABLE_NAME": sites_table.table_name,
+                "METRIC_NAMESPACE": METRIC_NAMESPACE,
+                "SNS_TOPIC_ARN": alarm_topic.topic_arn,
+                "DASHBOARD_NAME": f"WebHealthDashboard-{self.stack_name}"
+            },
+        )
+        
+        # Grant DynamoDB permissions to CRUD Lambda
+        sites_table.grant_read_write_data(sites_crud_lambda)
+        
+        # Grant CloudWatch permissions to CRUD Lambda for dynamic alarm/dashboard management
+        sites_crud_lambda.add_to_role_policy(
+            iam.PolicyStatement(
+                actions=[
+                    "cloudwatch:PutMetricAlarm",
+                    "cloudwatch:DeleteAlarms",
+                    "cloudwatch:DescribeAlarms",
+                    "cloudwatch:PutDashboard",
+                    "cloudwatch:GetDashboard",
+                    "cloudwatch:ListDashboards"
+                ],
+                resources=["*"]
+            )
+        )
+
+        # API Gateway REST API
+        sites_api = apigateway.RestApi(
+            self,
+            "SitesApi",
+            rest_api_name=f"Sites-API-{suffix}",
+            description="CRUD API for managing website monitoring targets",
+            default_cors_preflight_options=apigateway.CorsOptions(
+                allow_origins=["*"],
+                allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+                allow_headers=["Content-Type", "X-Amz-Date", "Authorization", "X-Api-Key"]
+            )
+        )
+
+        # API Gateway Integration
+        sites_integration = apigateway.LambdaIntegration(sites_crud_lambda)
+
+        # /sites resource for list and create operations
+        sites_resource = sites_api.root.add_resource("sites")
+        sites_resource.add_method("GET", sites_integration)  # List all sites
+        sites_resource.add_method("POST", sites_integration)  # Create site
+
+        # /sites/{site_id} resource for individual site operations
+        site_resource = sites_resource.add_resource("{site_id}")
+        site_resource.add_method("GET", sites_integration)  # Get single site
+        site_resource.add_method("PUT", sites_integration)  # Update site
+        site_resource.add_method("DELETE", sites_integration)  # Delete site
 
         for site in sites:
             avail_metric = cw.Metric(
@@ -214,3 +295,20 @@ class Week2PracStack(Stack):
         widgets.extend(operational_widgets)
 
         dashboard.add_widgets(*widgets)
+        
+        # CDK Outputs for integration testing
+        CfnOutput(
+            self,
+            "SitesApiUrl",
+            value=sites_api.url,
+            description="Sites CRUD API Gateway URL",
+            export_name=f"SitesApiUrl-{suffix}"
+        )
+        
+        CfnOutput(
+            self,
+            "SitesTableName", 
+            value=sites_table.table_name,
+            description="Sites DynamoDB table name",
+            export_name=f"SitesTableName-{suffix}"
+        )

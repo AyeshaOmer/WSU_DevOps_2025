@@ -18,11 +18,13 @@ try:
 except ImportError:
     HAS_PSUTIL = False
 
-# CloudWatch client
+# AWS clients
 cloudwatch = boto3.client("cloudwatch")
+dynamodb = boto3.resource('dynamodb')
 
-# Namespace from environment
+# Environment variables
 NAMESPACE = os.getenv("METRIC_NAMESPACE", "NYTMonitor")
+SITES_TABLE_NAME = os.getenv("SITES_TABLE_NAME", "Sites")
 
 def _put_metrics(site: str, latency_ms: float | None, status_code: int | None, available: int):
     """
@@ -122,6 +124,52 @@ def _get_memory_usage_mb():
     # Final fallback: return 0 if we can't measure memory
     return 0.0
 
+
+def _get_sites_from_dynamodb():
+    """
+    Get enabled sites from DynamoDB. Falls back to sites.json if DynamoDB is unavailable.
+    """
+    try:
+        table = dynamodb.Table(SITES_TABLE_NAME)
+        
+        # Scan for enabled sites only
+        response = table.scan(
+            FilterExpression='#enabled = :enabled',
+            ExpressionAttributeNames={'#enabled': 'enabled'},
+            ExpressionAttributeValues={':enabled': True}
+        )
+        
+        sites = []
+        for item in response['Items']:
+            # Use the URL for monitoring
+            sites.append(item['url'])
+            
+        if sites:
+            print(f"Retrieved {len(sites)} enabled sites from DynamoDB")
+            return sites
+        else:
+            print("No enabled sites found in DynamoDB, falling back to sites.json")
+            return _get_sites_from_json()
+            
+    except Exception as e:
+        print(f"Error accessing DynamoDB: {str(e)}, falling back to sites.json")
+        return _get_sites_from_json()
+
+
+def _get_sites_from_json():
+    """
+    Fallback method to read sites from sites.json file.
+    """
+    try:
+        sites_path = os.path.join(os.path.dirname(__file__), "sites.json")
+        with open(sites_path, "r", encoding="utf-8") as f:
+            sites = json.load(f)
+        print(f"Retrieved {len(sites)} sites from sites.json")
+        return sites
+    except Exception as e:
+        print(f"Error reading sites.json: {str(e)}")
+        return []
+
 def lambda_handler(event, context):
     """
     Lambda handler to crawl multiple websites and publish metrics.
@@ -130,9 +178,8 @@ def lambda_handler(event, context):
     start_time = time.time()
     initial_memory = _get_memory_usage_mb()
     
-    sites_path = os.path.join(os.path.dirname(__file__), "sites.json")
-    with open(sites_path, "r", encoding="utf-8") as f:
-        sites = json.load(f)
+    # Get sites from DynamoDB (with fallback to sites.json)
+    sites = _get_sites_from_dynamodb()
 
     http = urllib3.PoolManager()
 
