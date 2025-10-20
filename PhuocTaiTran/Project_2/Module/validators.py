@@ -64,6 +64,7 @@ def validate_status(status: str) -> bool:
 def validate_create_target_request(data: Dict[str, Any]) -> tuple[bool, Optional[str]]:
     """
     Validate create target request data.
+    Auto-generates missing fields from URL if only URL is provided.
     
     Args:
         data (Dict[str, Any]): Request data to validate
@@ -73,6 +74,28 @@ def validate_create_target_request(data: Dict[str, Any]) -> tuple[bool, Optional
         
     Reference: https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_lambda/Function.html#aws_cdk.aws_lambda.Function.add_environment
     """
+    # If only URL is provided, auto-generate other fields
+    if "url" in data and data["url"] and len(data) == 1:
+        from urllib.parse import urlparse
+        import re
+        
+        url = data["url"]
+        parsed_url = urlparse(url)
+        domain = parsed_url.netloc.replace('www.', '')
+        
+        # Auto-generate target_id from domain
+        target_id = re.sub(r'[^a-zA-Z0-9-]', '-', domain.lower())
+        target_id = re.sub(r'-+', '-', target_id).strip('-')
+        
+        # Auto-generate name from domain
+        name = domain.replace('.com', '').replace('.org', '').replace('.net', '')
+        name = name.replace('.', ' ').title()
+        
+        # Update data with auto-generated fields
+        data["target_id"] = target_id
+        data["name"] = name
+        data["description"] = f"Auto-generated target for {domain}"
+    
     # Check required fields
     required_fields = ["target_id", "url", "name"]
     for field in required_fields:
@@ -97,6 +120,7 @@ def validate_create_target_request(data: Dict[str, Any]) -> tuple[bool, Optional
 def validate_update_target_request(data: Dict[str, Any]) -> tuple[bool, Optional[str]]:
     """
     Validate update target request data.
+    Allows partial updates - user can provide only the fields they want to update.
     
     Args:
         data (Dict[str, Any]): Request data to validate
@@ -106,18 +130,29 @@ def validate_update_target_request(data: Dict[str, Any]) -> tuple[bool, Optional
         
     Reference: https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_dynamodb/Table.html
     """
-    # At least one field must be provided for update
+    # Check if at least one updatable field is provided
     updatable_fields = ["url", "name", "description", "status", "crawl_config"]
-    if not any(field in data for field in updatable_fields):
-        return False, "At least one updatable field must be provided"
+    provided_fields = [field for field in updatable_fields if field in data and data[field]]
     
-    # Validate URL if provided
-    if "url" in data and not validate_url(data["url"]):
+    if not provided_fields:
+        return False, "At least one updatable field (name, url, description, status, crawl_config) must be provided"
+    
+    # Validate URL if provided and not empty
+    if "url" in data and data["url"] and not validate_url(data["url"]):
         return False, ERROR_MESSAGES["INVALID_URL"]
     
-    # Validate status if provided
-    if "status" in data and not validate_status(data["status"]):
+    # Validate status if provided and not empty
+    if "status" in data and data["status"] and not validate_status(data["status"]):
         return False, ERROR_MESSAGES["INVALID_STATUS"]
+    
+    # Remove empty or None fields from data (so they won't be updated)
+    fields_to_remove = []
+    for field in data:
+        if data[field] is None or data[field] == "":
+            fields_to_remove.append(field)
+    
+    for field in fields_to_remove:
+        del data[field]
     
     return True, None
 

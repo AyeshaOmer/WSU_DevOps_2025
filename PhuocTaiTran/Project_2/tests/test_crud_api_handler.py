@@ -2,7 +2,7 @@
 Unit tests for Web Crawler CRUD API Lambda handlers
 Tests all CRUD operations, validation, and error handling.
 
-Reference: https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_lambda/README.html
+ https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_lambda/README.html
 """
 
 import json
@@ -27,7 +27,7 @@ class TestCrudApiHandler(unittest.TestCase):
     """
     Test cases for CRUD API Lambda handler.
     
-    Reference: https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_lambda/Function.html
+     https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_lambda/Function.html
     """
     
     def setUp(self):
@@ -56,7 +56,7 @@ class TestCrudApiHandler(unittest.TestCase):
         """
         Test CORS preflight handling.
         
-        Reference: https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_apigateway/Cors.html
+         https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_apigateway/Cors.html
         """
         event = {
             "httpMethod": "OPTIONS",
@@ -75,7 +75,7 @@ class TestCrudApiHandler(unittest.TestCase):
         """
         Test handling of invalid routes.
         
-        Reference: https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_apigateway/Method.html
+         https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_apigateway/Method.html
         """
         event = {
             "httpMethod": "GET",
@@ -94,7 +94,7 @@ class TestCrudApiHandler(unittest.TestCase):
         """
         Test successful target creation.
         
-        Reference: https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_dynamodb/Table.html
+        https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_dynamodb/Table.html
         """
         # Setup DynamoDB mock
         dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
@@ -133,7 +133,7 @@ class TestCrudApiHandler(unittest.TestCase):
         """
         Test target creation with invalid JSON.
         
-        Reference: https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_apigateway/RequestValidator.html
+         https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_apigateway/RequestValidator.html
         """
         invalid_body = "{ invalid json }"
         response = handle_create_target(invalid_body)
@@ -148,7 +148,7 @@ class TestCrudApiHandler(unittest.TestCase):
         """
         Test target creation with missing required URL field.
         
-        Reference: https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_apigateway/RequestValidator.html
+         https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_apigateway/RequestValidator.html
         """
         invalid_target = {
             "title": "Test Site",
@@ -169,7 +169,7 @@ class TestCrudApiHandler(unittest.TestCase):
         """
         Test successful target retrieval.
         
-        Reference: https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_dynamodb/Table.html
+         https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_dynamodb/Table.html
         """
         # Setup DynamoDB mock
         dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
@@ -208,7 +208,7 @@ class TestCrudApiHandler(unittest.TestCase):
         """
         Test target retrieval with invalid ID format.
         
-        Reference: https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_apigateway/RequestValidator.html
+         https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_apigateway/RequestValidator.html
         """
         invalid_id = "invalid-id-!@#"
         response = handle_get_target(invalid_id)
@@ -224,7 +224,7 @@ class TestCrudApiHandler(unittest.TestCase):
         """
         Test successful target update.
         
-        Reference: https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_dynamodb/Table.html
+         https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_dynamodb/Table.html
         """
         # Setup DynamoDB mock
         dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
@@ -269,7 +269,7 @@ class TestCrudApiHandler(unittest.TestCase):
         """
         Test successful target deletion.
         
-        Reference: https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_dynamodb/Table.html
+         https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_dynamodb/Table.html
         """
         # Setup DynamoDB mock
         dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
@@ -305,7 +305,7 @@ class TestCrudApiHandler(unittest.TestCase):
         """
         Test successful target listing.
         
-        Reference: https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_dynamodb/Table.html
+         https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_dynamodb/Table.html
         """
         # Setup DynamoDB mock
         dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
@@ -358,7 +358,7 @@ class TestCrudApiHandler(unittest.TestCase):
         """
         Test target listing with invalid status filter.
         
-        Reference: https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_apigateway/RequestValidator.html
+         https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_apigateway/RequestValidator.html
         """
         query_params = {"status": "invalid_status"}
         response = handle_list_targets(query_params)
@@ -371,7 +371,7 @@ class TestCrudApiHandler(unittest.TestCase):
         """
         Test response creation utility.
         
-        Reference: https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_apigateway/LambdaIntegration.html
+         https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_apigateway/LambdaIntegration.html
         """
         body_data = {"message": "success"}
         response = create_response(HTTP_STATUS["OK"], body_data)
@@ -387,7 +387,7 @@ class TestCrudApiHandler(unittest.TestCase):
         """
         Test error response creation utility.
         
-        Reference: https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_apigateway/ResponseType.html
+         https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_apigateway/ResponseType.html
         """
         error_message = "Test error"
         response = create_error_response(HTTP_STATUS["BAD_REQUEST"], error_message)

@@ -18,7 +18,7 @@ class Project2Stack(Stack):
         super().__init__(scope, construct_id, **kwargs)
 
         # DynamoDB table for web crawler targets
-        # Reference: https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_dynamodb/Table.html
+        #  https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_dynamodb/Table.html
         crawler_targets_table = dynamodb.Table(
             self, "CrawlerTargetsTable",
             table_name=f"crawler-targets-{self.account}-{self.region}",
@@ -31,7 +31,7 @@ class Project2Stack(Stack):
         )
         
         # Add Global Secondary Index for status-based queries
-        # Reference: https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_dynamodb/Table.html#aws_cdk.aws_dynamodb.Table.add_global_secondary_index
+        #  https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_dynamodb/Table.html#aws_cdk.aws_dynamodb.Table.add_global_secondary_index
         crawler_targets_table.add_global_secondary_index(
             index_name="status-index",
             partition_key=dynamodb.Attribute(
@@ -42,41 +42,43 @@ class Project2Stack(Stack):
         )
 
         # Lambda function for CRUD API operations
-        # Reference: https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_lambda/Function.html
+        #  https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_lambda/Function.html
         crud_api_lambda = _lambda.Function(
             self, "CrudApiLambda",
             runtime=_lambda.Runtime.PYTHON_3_12,
-            handler="crud_api_handler.lambda_handler",
-            code=_lambda.Code.from_asset("Module"),
-            timeout=Duration.seconds(30),
+            handler="crud_api_handler.lambda_handler", # call the crud_api_handler.py file and its lambda_handler function
+            code=_lambda.Code.from_asset("Module"), # point to the folder where the lambda code is
+            timeout=Duration.seconds(30), # set timeout to 30 seconds
             environment={
                 "DYNAMODB_TABLE_NAME": crawler_targets_table.table_name
             }
         )
 
         # Grant Lambda permissions to access DynamoDB table
-        # Reference: https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_dynamodb/Table.html#aws_cdk.aws_dynamodb.Table.grant_read_write_data
+        #  https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_dynamodb/Table.html#aws_cdk.aws_dynamodb.Table.grant_read_write_data
         crawler_targets_table.grant_read_write_data(crud_api_lambda)
 
         # REST API Gateway for CRUD operations
-        # Reference: https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_apigateway/RestApi.html
+        #  https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_apigateway/RestApi.html
         crud_api = apigw.RestApi(
             self, "CrudApi",
             rest_api_name="Web Crawler CRUD API",
             description="RESTful API for managing web crawler targets",
-            # Enable CORS for all origins
-            # Reference: https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_apigateway/Cors.html
+            # Enable CORS for all origins (CORS: Cross-Origin Resource Sharing)
+            # Allow access from any domain for testing purposes
+            #  https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_apigateway/Cors.html
             default_cors_preflight_options=apigw.CorsOptions(
                 allow_origins=apigw.Cors.ALL_ORIGINS,
                 allow_methods=apigw.Cors.ALL_METHODS,
                 allow_headers=["Content-Type", "X-Amz-Date", "Authorization", "X-Api-Key", "X-Amz-Security-Token"]
             ),
-            # Reference: https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_apigateway/EndpointType.html
+            #  https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_apigateway/EndpointType.html
             endpoint_types=[apigw.EndpointType.REGIONAL]
         )
 
         # Lambda integration for API Gateway
-        # Reference: https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_apigateway/LambdaIntegration.html
+        # Integrates an AWS Lambda function to an API Gateway method.
+        #  https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_apigateway/LambdaIntegration.html
         lambda_integration = apigw.LambdaIntegration(
             crud_api_lambda,
             proxy=True,
@@ -91,17 +93,19 @@ class Project2Stack(Stack):
         )
 
         # /targets resource for collection operations
-        # Reference: https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_apigateway/Resource.html
+        #  https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_apigateway/Resource.html
         targets_resource = crud_api.root.add_resource("targets")
         
-        # POST /targets - Create new target
-        # Reference: https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_apigateway/Method.html
+        # POST /targets - Create new target website
+        #  https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_apigateway/Method.html
         targets_resource.add_method(
             "POST", 
             lambda_integration,
             method_responses=[
                 apigw.MethodResponse(
+                    # Return 201 Created on successful creation
                     status_code="201",
+                    # Enable CORS headers in the response
                     response_parameters={
                         "method.response.header.Access-Control-Allow-Origin": True
                     }
@@ -115,6 +119,7 @@ class Project2Stack(Stack):
             lambda_integration,
             method_responses=[
                 apigw.MethodResponse(
+                    # Return 200 OK on successful retrieval
                     status_code="200",
                     response_parameters={
                         "method.response.header.Access-Control-Allow-Origin": True
@@ -126,7 +131,7 @@ class Project2Stack(Stack):
         # /targets/{target_id} resource for individual target operations
         target_resource = targets_resource.add_resource("{target_id}")
         
-        # GET /targets/{target_id} - Get specific target
+        # GET /targets/{target_id} - Get specific target with filtering
         target_resource.add_method(
             "GET", 
             lambda_integration,
@@ -180,7 +185,7 @@ class Project2Stack(Stack):
         bucket.grant_read_write(crud_api_lambda)
 
         # CloudFormation outputs
-        # Reference: https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk/CfnOutput.html
+        #  https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk/CfnOutput.html
         CfnOutput(
             self, "ApiGatewayUrl",
             value=crud_api.url,

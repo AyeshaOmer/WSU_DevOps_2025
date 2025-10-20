@@ -32,6 +32,7 @@ class PhuocTaiTranStack(Stack):
             branch = "main",
             action_name = "WSU_DevOps_2025",
             authentication = SecretValue.secrets_manager("myToken"),
+            # AWS codepipeline will detect changes periodically in github repo
             trigger = actions_.GitHubTrigger.POLL)
         
         # Synth step
@@ -140,13 +141,16 @@ class PhuocTaiTranStack(Stack):
         # Stage 2: Beta with integration tests after deployment and rollback monitoring
         beta_stage = pipeline.add_stage(stage=beta, post=[beta_integration_test])
         
-        # Add rollback monitoring for Beta
+        # Add rollback monitoring for Beta - ACTUALLY TRIGGERS ROLLBACK
         beta_stage.add_post(pipelines.ShellStep("BetaRollbackMonitor",
                                                commands=[
                                                    "echo 'Monitoring Beta deployment for auto rollback...'",
-                                                   "# Monitor application health metrics",
-                                                   "aws cloudwatch get-metric-statistics --namespace AWS/Lambda --metric-name Errors --start-time $(date -u -d '5 minutes ago' +%Y-%m-%dT%H:%M:%S) --end-time $(date -u +%Y-%m-%dT%H:%M:%S) --period 300 --statistics Sum --dimensions Name=FunctionName,Value=PhuocTaiTranLambda || echo 'Health check passed'",
-                                                   "echo 'Beta rollback monitoring completed'"
+                                                   "# Monitor application health metrics and FAIL if errors detected",
+                                                   # Get error count and fail if > 0
+                                                   "ERROR_COUNT=$(aws cloudwatch get-metric-statistics --namespace AWS/Lambda --metric-name Errors --start-time $(date -u -d '5 minutes ago' +%Y-%m-%dT%H:%M:%S) --end-time $(date -u +%Y-%m-%dT%H:%M:%S) --period 300 --statistics Sum --dimensions Name=FunctionName,Value=PhuocTaiTranLambda --query 'Datapoints[0].Sum' --output text 2>/dev/null || echo '0')",
+                                                   # Trigger rollback if errors found
+                                                   "if [ \"$ERROR_COUNT\" != \"None\" ] && [ \"$ERROR_COUNT\" -gt 0 ]; then echo 'ROLLBACK TRIGGERED: $ERROR_COUNT Lambda errors detected in Beta stage' && exit 1; fi",
+                                                   "echo 'Beta rollback monitoring completed - No errors detected'"
                                                ]))
         
         # Stage 3: Gamma with performance tests after deployment  
@@ -165,6 +169,7 @@ class PhuocTaiTranStack(Stack):
                                                commands=[
                                                    "echo 'Production auto rollback monitoring active...'",
                                                    "# Monitor all critical CloudWatch alarms",
+                                                   # Check for any alarms in ALARM state
                                                    "aws cloudwatch describe-alarms --alarm-names PhuocTaiTranAlarm --state-value ALARM && echo 'CRITICAL: Alarms detected - CloudFormation will auto rollback' || echo 'Production deployment healthy'",
                                                    "echo 'Production rollback monitoring enabled'"
                                                ]))

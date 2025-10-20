@@ -20,14 +20,17 @@ from validators import (
 from constants import HTTP_STATUS, CORS_HEADERS, ERROR_MESSAGES
 
 # Configure logging
+# why logging? Logging is essential for monitoring and debugging Lambda functions.
 # Reference: https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_logs/README.html
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 # Initialize DynamoDB manager
+# why here? Initializing outside the handler to reuse connections across invocations.
 db_manager = DynamoDBManager(os.environ.get('DYNAMODB_TABLE_NAME'))
 
-
+# Main Lambda handler
+# https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_lambda/Function.html#aws_cdk.aws_lambda.Function.handler
 def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     """
     Main Lambda handler for API Gateway requests.
@@ -61,7 +64,7 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 return handle_list_targets(query_parameters)
             elif http_method == 'POST':
                 return handle_create_target(event.get('body', ''))
-        
+        # /targets/{target_id} resource with target_id parameter
         elif path.startswith('/targets/'):
             target_id = path_parameters.get('target_id')
             if not target_id:
@@ -69,7 +72,7 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     HTTP_STATUS["BAD_REQUEST"],
                     ERROR_MESSAGES["MISSING_REQUIRED_FIELD"] + ": target_id"
                 )
-            
+            # Handle methods for specific target
             if http_method == 'GET':
                 return handle_get_target(target_id)
             elif http_method == 'PUT':
@@ -90,7 +93,8 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             "Internal server error"
         )
 
-
+# CRUD operation handlers
+# Each handler validates input, interacts with DynamoDB, and returns a response
 def handle_create_target(body: str) -> Dict[str, Any]:
     """
     Handle POST /targets - Create a new crawler target.
@@ -138,7 +142,7 @@ def handle_create_target(body: str) -> Dict[str, Any]:
             "Internal server error"
         )
 
-
+# Handler for GET /targets/{target_id}
 def handle_get_target(target_id: str) -> Dict[str, Any]:
     """
     Handle GET /targets/{target_id} - Retrieve a specific crawler target.
@@ -171,7 +175,7 @@ def handle_get_target(target_id: str) -> Dict[str, Any]:
             "Internal server error"
         )
 
-
+# Handler for PUT /targets/{target_id}
 def handle_update_target(target_id: str, body: str) -> Dict[str, Any]:
     """
     Handle PUT /targets/{target_id} - Update a crawler target.
@@ -230,7 +234,7 @@ def handle_update_target(target_id: str, body: str) -> Dict[str, Any]:
             "Internal server error"
         )
 
-
+# Handler for DELETE /targets/{target_id}
 def handle_delete_target(target_id: str) -> Dict[str, Any]:
     """
     Handle DELETE /targets/{target_id} - Delete a crawler target.
@@ -263,7 +267,7 @@ def handle_delete_target(target_id: str) -> Dict[str, Any]:
             "Internal server error"
         )
 
-
+# Handler for GET /targets with optional query parameters
 def handle_list_targets(query_parameters: Dict[str, str]) -> Dict[str, Any]:
     """
     Handle GET /targets - List crawler targets with optional filtering.
@@ -298,7 +302,7 @@ def handle_list_targets(query_parameters: Dict[str, str]) -> Dict[str, Any]:
             "Internal server error"
         )
 
-
+# Response creation helpers
 def create_response(status_code: int, body: Dict[str, Any]) -> Dict[str, Any]:
     """
     Create a standardized API Gateway response.
@@ -318,7 +322,7 @@ def create_response(status_code: int, body: Dict[str, Any]) -> Dict[str, Any]:
         "body": json.dumps(body, default=str)
     }
 
-
+# Error response creation helper
 def create_error_response(status_code: int, error_message: str) -> Dict[str, Any]:
     """
     Create a standardized error response.
