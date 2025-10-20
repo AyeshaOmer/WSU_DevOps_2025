@@ -1,6 +1,7 @@
 import json
 import pytest
 import os
+import time
 os.environ["TABLE_NAME"] = "TargetListTableTest"
 import boto3
 from moto import mock_aws
@@ -200,7 +201,7 @@ def test_delete_item(dynamodb_table):
 # -------------------------------
 # Integration Tests for CRUD 
 # -------------------------------
-'''
+
 def test_crud_lambda_writes_to_dynamodb(dynamodb_table):
     # Simulate a POST request to CRUD Lambda
     event = {
@@ -217,9 +218,10 @@ def test_crud_lambda_writes_to_dynamodb(dynamodb_table):
     resp = dynamodb_table.get_item(Key={"url": "https://integration-test.com"})
     assert "Item" in resp
     assert resp["Item"]["status"] == "active"
-'''
+
 
 # Test for CRUDLambda - has not been tested yet
+# has issue with 'modules.CRUDLambda' has no attribute 'invoke'
 '''
 def test_create_target_entry():
     start_time = time.time()
@@ -234,6 +236,23 @@ def test_create_target_entry():
     assert response["StatusCode"] == 200
     assert latency < 1  # Example threshold
 '''
+'''
+def test_create_target_entry():
+    event = {
+        "httpMethod": "POST",
+        "body": json.dumps({"url": "https://test.com", "status": "active"})
+    }
+    start_time = time.time()
+    response = CRUDLambda.lambda_handler(event, None)
+    latency = time.time() - start_time
+
+    assert response["statusCode"] == 200
+    body = json.loads(response["body"])
+    assert body["item"]["url"] == "https://test.com"
+    assert latency < 1
+'''
+
+
 # implement two integration tests - under gamma
 # convert unit test to an alpha file, and functional tests to a beta file
 

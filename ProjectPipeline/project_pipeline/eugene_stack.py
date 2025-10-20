@@ -133,7 +133,7 @@ class EugeneStack(Stack):
             alarm_description="Triggers when the Lambda function is not invoked (invocations < 1)." # check if the lambda has runned
         )
 
-        mem_threshold_mb = int(memory_size_mb * 0.9)
+        mem_threshold_mb = int(memory_size_mb * 0.9) # threshold for memory is 90%
         memory_alarm = cloudwatch.Alarm(self, f"MemoryAlarm-{construct_id}",
             metric=WebHealthMemMetric,
             comparison_operator=cloudwatch.ComparisonOperator.GREATER_THAN_THRESHOLD,
