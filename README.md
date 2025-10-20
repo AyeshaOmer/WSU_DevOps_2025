@@ -77,4 +77,79 @@ It extends the basic canary Lambda into a **web crawler** that periodically test
 Run all the unit tests for Project 1 tests locally with:
 ```bash
  pytest -v c:\Users\Guran\Documents\NewProject\WSU_DevOps_2025\Gursh\gursh\modules\tests\unit\test_application.py
+```
+## Project 2 — CRUD API Gateway for URL Management
+
+Project 2 extends the website monitoring system by adding a **public CRUD API** that allows users to manage the list of websites to be monitored.  
+This is implemented using **Amazon API Gateway**, **AWS Lambda**, and **Amazon DynamoDB**, enabling dynamic updates to the target list without modifying the core monitoring stack.
+
+### 1. Purpose
+- Provide an API interface for users to **add, view, update, and delete** target URLs.  
+- Store the list of monitored websites in a dedicated **DynamoDB table**.  
+- Allow the main monitoring Lambda (from Project 1) to automatically read from this table to get its target URLs.
+
+### 2. API Gateway and Lambda Integration
+- A **Lambda function (`APIgateway.py`)** serves as the backend for all API requests.
+- **API Gateway** exposes this Lambda through a RESTful interface with standard HTTP methods:
+  - **POST** – Add a new URL to the DynamoDB table.
+  - **GET** – Retrieve all URLs or a specific one.
+  - **PUT** – Update an existing URL entry.
+  - **DELETE** – Remove a URL from the database.
+- The Lambda function uses the `boto3` library to interact with DynamoDB, ensuring secure, scalable data operations.
+
+### 3. DynamoDB Table
+- The URLs are stored in a DynamoDB table named **`UrlsTable`**.  
+- Each item uses the `url` attribute as its **primary key**.  
+- The table is created and managed automatically by AWS CDK, and it is also accessed by:
+  - **WebHealth Lambda** (to read URLs)
+  - **CRUD Lambda** (to modify URLs)
+
+### 4. Unit Testing (Project 2)
+
+These tests verify each CRUD path of the API Lambda locally using `pytest` and `moto` (mocked DynamoDB).  
+They call your actual `lambda_handler` and monkeypatch the module’s `table` to a moto table, so no AWS calls are made.
+
+Covered:
+- POST adds a new URL to the table
+- GET lists all URLs (or a specific one)
+- PUT updates an existing URL
+- DELETE removes the URL
+
+Run the tests:
+```bash
+pytest -v gursh/modules/tests/unit/test_project2.py
+```
+
+### 5. Testing the CRUD API Gateway Endpoints (Manual)
+
+After deploying the stack, you can manually test the live API using `curl` commands.  
+Replace `<YOUR_API_ENDPOINT>` with the invoke URL from your **API Gateway** console.
+
+#### Set the base URL:
+BASE_URL="https://<YOUR_API_ENDPOINT>/prod"
+
+#### 1. POST – Add a new URL
+curl -X POST "$BASE_URL/urls"
+-H "Content-Type: application/json"
+-d '{"url": "https://example.com"}'
+
+#### 2. GET – Retrieve all URLs
+curl -X GET "$BASE_URL/urls"
+
+#### 3. PUT – Update an existing URL
+curl -X PUT "$BASE_URL/urls"
+-H "Content-Type: application/json"
+-d '{"url": "https://example.com", "note": "Updated entry"}'
+
+#### 4. DELETE – Remove a URL
+curl -X DELETE "$BASE_URL/urls?url=https://example.com"
+
+Each command returns a simple JSON response with:
+- `statusCode` – The HTTP status (e.g., 200)  
+- `message` – Describes the action performed  
+- `item` – The URL object (for POST/PUT)
+
+
+
+
 
