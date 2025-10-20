@@ -16,6 +16,10 @@ from constructs import Construct
 from pathlib import Path
 import json
 
+def create_alarm_description(metric_type: str, site: str, severity: str = "warning"):
+    """Create alarm description with embedded tags for filtering"""
+    return f"[METRIC_TYPE:{metric_type}][SEVERITY:{severity}][SITE:{site}] Alarm for {site}"
+
 class Week2PracStack(Stack):
     def __init__(self, scope: Construct, id: str, **kwargs):
         super().__init__(scope, id, **kwargs)
@@ -126,7 +130,7 @@ class Week2PracStack(Stack):
                 threshold=1,
                 evaluation_periods=1,
                 comparison_operator=cw.ComparisonOperator.LESS_THAN_THRESHOLD,
-                alarm_description=f"Alarm if {site} becomes unavailable",
+                alarm_description=create_alarm_description("availability", site, "critical"),
             )
             availability_alarm.add_alarm_action(cw_actions.SnsAction(alarm_topic))
 
@@ -137,8 +141,76 @@ class Week2PracStack(Stack):
                 threshold=2000,
                 evaluation_periods=1,
                 comparison_operator=cw.ComparisonOperator.GREATER_THAN_THRESHOLD,
-                alarm_description=f"Alarm if {site} latency is too high",
+                alarm_description=create_alarm_description("latency", site, "warning"),
             )
             latency_alarm.add_alarm_action(cw_actions.SnsAction(alarm_topic))
+
+        # Operational health alarms for the crawler itself
+        crawler_execution_time_alarm = cw.Alarm(
+            self,
+            f"CrawlerExecutionTimeAlarm",
+            metric=cw.Metric(
+                namespace=METRIC_NAMESPACE,
+                metric_name="CrawlerExecutionTime",
+                dimensions_map={"Function": "WebCrawler"},
+                statistic="Average",
+                period=Duration.minutes(5)
+            ),
+            threshold=30000,  # 30 seconds
+            evaluation_periods=2,
+            comparison_operator=cw.ComparisonOperator.GREATER_THAN_THRESHOLD,
+            alarm_description=create_alarm_description("operational", "WebCrawler", "warning"),
+        )
+        crawler_execution_time_alarm.add_alarm_action(cw_actions.SnsAction(alarm_topic))
+
+        crawler_memory_alarm = cw.Alarm(
+            self,
+            f"CrawlerMemoryUsageAlarm",
+            metric=cw.Metric(
+                namespace=METRIC_NAMESPACE,
+                metric_name="CrawlerMemoryUsage",
+                dimensions_map={"Function": "WebCrawler"},
+                statistic="Maximum",
+                period=Duration.minutes(5)
+            ),
+            threshold=100,  # 100 MB
+            evaluation_periods=1,
+            comparison_operator=cw.ComparisonOperator.GREATER_THAN_THRESHOLD,
+            alarm_description=create_alarm_description("operational", "WebCrawler", "critical"),
+        )
+        crawler_memory_alarm.add_alarm_action(cw_actions.SnsAction(alarm_topic))
+
+        # Add operational metrics to dashboard
+        operational_widgets = [
+            cw.GraphWidget(
+                title="Crawler Execution Time",
+                left=[cw.Metric(
+                    namespace=METRIC_NAMESPACE,
+                    metric_name="CrawlerExecutionTime",
+                    dimensions_map={"Function": "WebCrawler"},
+                    statistic="Average",
+                    period=Duration.minutes(5),
+                    label="Execution Time (ms)"
+                )],
+                width=12,
+                height=6
+            ),
+            cw.GraphWidget(
+                title="Crawler Memory Usage",
+                left=[cw.Metric(
+                    namespace=METRIC_NAMESPACE,
+                    metric_name="CrawlerMemoryUsage",
+                    dimensions_map={"Function": "WebCrawler"},
+                    statistic="Maximum",
+                    period=Duration.minutes(5),
+                    label="Memory Usage (MB)"
+                )],
+                width=12,
+                height=6
+            )
+        ]
+        
+        # Add operational widgets to dashboard
+        widgets.extend(operational_widgets)
 
         dashboard.add_widgets(*widgets)

@@ -3,6 +3,20 @@ import time
 import json
 import os
 import boto3
+from datetime import datetime
+
+# Import optional modules for memory tracking
+try:
+    import resource
+    HAS_RESOURCE = True
+except ImportError:
+    HAS_RESOURCE = False
+
+try:
+    import psutil
+    HAS_PSUTIL = True
+except ImportError:
+    HAS_PSUTIL = False
 
 # CloudWatch client
 cloudwatch = boto3.client("cloudwatch")
@@ -41,10 +55,81 @@ def _put_metrics(site: str, latency_ms: float | None, status_code: int | None, a
 
     cloudwatch.put_metric_data(Namespace=NAMESPACE, MetricData=metric_data)
 
+def _put_operational_metrics(execution_time_ms: float, memory_used_mb: float, sites_processed: int):
+    """
+    Publish operational health metrics for the crawler itself.
+    """
+    metric_data = [
+        {
+            "MetricName": "CrawlerExecutionTime",
+            "Dimensions": [{"Name": "Function", "Value": "WebCrawler"}],
+            "Value": execution_time_ms,
+            "Unit": "Milliseconds",
+        },
+        {
+            "MetricName": "CrawlerMemoryUsage", 
+            "Dimensions": [{"Name": "Function", "Value": "WebCrawler"}],
+            "Value": memory_used_mb,
+            "Unit": "Megabytes",
+        },
+        {
+            "MetricName": "SitesProcessed",
+            "Dimensions": [{"Name": "Function", "Value": "WebCrawler"}],
+            "Value": sites_processed,
+            "Unit": "Count",
+        }
+    ]
+    
+    cloudwatch.put_metric_data(Namespace=NAMESPACE, MetricData=metric_data)
+
+def _get_memory_usage_mb():
+    """
+    Get current memory usage in MB. Uses different methods based on what's available.
+    """
+    # Try psutil first (works on Windows)
+    if HAS_PSUTIL:
+        try:
+            process = psutil.Process()
+            memory_info = process.memory_info()
+            return memory_info.rss / (1024 * 1024)  # Convert bytes to MB
+        except Exception:
+            pass
+    
+    # Try resource module (Unix/Linux only)
+    if HAS_RESOURCE:
+        try:
+            memory_usage_kb = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+            # On Linux, ru_maxrss is in KB, on macOS it's in bytes
+            import platform
+            if platform.system() == 'Darwin':  # macOS
+                return memory_usage_kb / (1024 * 1024)  # Convert bytes to MB
+            else:  # Linux (Lambda environment)
+                return memory_usage_kb / 1024  # Convert KB to MB
+        except Exception:
+            pass
+    
+    # Fallback: try reading /proc/self/status (Linux only)
+    try:
+        with open('/proc/self/status', 'r') as f:
+            for line in f:
+                if line.startswith('VmRSS:'):
+                    # Extract memory value in KB
+                    memory_kb = int(line.split()[1])
+                    return memory_kb / 1024  # Convert to MB
+    except Exception:
+        pass
+    
+    # Final fallback: return 0 if we can't measure memory
+    return 0.0
+
 def lambda_handler(event, context):
     """
     Lambda handler to crawl multiple websites and publish metrics.
     """
+    # Start operational metrics tracking
+    start_time = time.time()
+    initial_memory = _get_memory_usage_mb()
+    
     sites_path = os.path.join(os.path.dirname(__file__), "sites.json")
     with open(sites_path, "r", encoding="utf-8") as f:
         sites = json.load(f)
@@ -72,4 +157,18 @@ def lambda_handler(event, context):
 
         _put_metrics(site, latency_ms, status_code, available)
 
-    return {"ok": True, "sites_checked": len(sites)}
+    # Calculate and publish operational metrics
+    end_time = time.time()
+    execution_time_ms = (end_time - start_time) * 1000
+    final_memory = _get_memory_usage_mb()
+    max_memory_used = max(initial_memory, final_memory)
+    
+    # Publish operational health metrics
+    _put_operational_metrics(execution_time_ms, max_memory_used, len(sites))
+
+    return {
+        "ok": True, 
+        "sites_checked": len(sites),
+        "execution_time_ms": execution_time_ms,
+        "memory_used_mb": max_memory_used
+    }

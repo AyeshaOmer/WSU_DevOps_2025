@@ -1,0 +1,21 @@
+{
+  "Records": [
+    {
+      "EventSource": "aws:sns",
+      "EventVersion": "1.0",
+      "EventSubscriptionArn": "arn:aws:sns:ap-southeast-2:934249453094:WebMonitorAlarms-Beta-WebHealthStack:12345678-1234-1234-1234-123456789012",
+      "Sns": {
+        "Type": "Notification",
+        "MessageId": "12345678-1234-1234-1234-123456789012",
+        "TopicArn": "arn:aws:sns:ap-southeast-2:934249453094:WebMonitorAlarms-Beta-WebHealthStack",
+        "Subject": "ALARM: AvailabilityAlarm-https://www.nytimes.com",
+        "Message": "{\"AlarmName\":\"AvailabilityAlarm-https://www.nytimes.com\",\"AlarmDescription\":\"Alarm if https://www.nytimes.com becomes unavailable\",\"AWSAccountId\":\"934249453094\",\"NewStateValue\":\"ALARM\",\"NewStateReason\":\"Threshold Crossed: 1 out of the last 1 datapoints [0.0 (20/10/23 10:00:00)] was less than the threshold (1.0).\",\"StateChangeTime\":\"2023-10-20T10:00:00.000+0000\",\"Region\":\"ap-southeast-2\",\"AlarmArn\":\"arn:aws:cloudwatch:ap-southeast-2:934249453094:alarm:AvailabilityAlarm-https://www.nytimes.com\",\"OldStateValue\":\"OK\",\"Trigger\":{\"MetricName\":\"Availability\",\"Namespace\":\"NYTMonitor\",\"StatisticType\":\"Statistic\",\"Statistic\":\"AVERAGE\",\"Unit\":null,\"Dimensions\":[{\"value\":\"https://www.nytimes.com\",\"name\":\"Site\"}],\"Period\":300,\"EvaluationPeriods\":1,\"ComparisonOperator\":\"LessThanThreshold\",\"Threshold\":1.0,\"TreatMissingData\":\"\",\"EvaluateLowSampleCountPercentile\":\"\"}}",
+        "Timestamp": "2023-10-20T10:00:00.000Z",
+        "SignatureVersion": "1",
+        "Signature": "test-signature",
+        "SigningCertUrl": "https://sns.ap-southeast-2.amazonaws.com/SimpleNotificationService-test.pem",
+        "UnsubscribeUrl": "https://sns.ap-southeast-2.amazonaws.com/?Action=Unsubscribe&SubscriptionArn=arn:aws:sns:ap-southeast-2:934249453094:WebMonitorAlarms-Beta-WebHealthStack:12345678-1234-1234-1234-123456789012"
+      }
+    }
+  ]
+}

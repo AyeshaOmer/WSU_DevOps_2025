@@ -1,0 +1,13 @@
+{
+  "version": "0",
+  "id": "12345678-1234-1234-1234-123456789012",
+  "detail-type": "Scheduled Event",
+  "source": "aws.events",
+  "account": "934249453094",
+  "time": "2023-10-20T10:00:00Z",
+  "region": "ap-southeast-2",
+  "detail": {},
+  "resources": [
+    "arn:aws:events:ap-southeast-2:934249453094:rule/WebMonitorSchedule"
+  ]
+}
