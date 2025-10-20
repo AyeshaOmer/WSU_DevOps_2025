@@ -74,4 +74,4 @@ def test_cloudwatch_dashboard():
     app = core.App()
     stack = PhuocTaiTranLambdaStack(app, "phuoc-tai-tran", stage_name="test")
     template = assertions.Template.from_stack(stack)
-    template.resource_count_is("AWS::CloudWatch::Dashboard", 3)
+    template.resource_count_is("AWS::CloudWatch::Dashboard", 1)

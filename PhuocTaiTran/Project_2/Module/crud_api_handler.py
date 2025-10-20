@@ -2,7 +2,7 @@
 Main Lambda handler for Project 2 Web Crawler CRUD API
 This module serves as the entry point for all API Gateway requests.
 
-Reference: https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_lambda/README.html
+https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_lambda/README.html
 """
 
 import json
@@ -21,7 +21,7 @@ from constants import HTTP_STATUS, CORS_HEADERS, ERROR_MESSAGES
 
 # Configure logging
 # why logging? Logging is essential for monitoring and debugging Lambda functions.
-# Reference: https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_logs/README.html
+# https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_logs/README.html
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
@@ -42,7 +42,7 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     Returns:
         Dict[str, Any]: API Gateway response
         
-    Reference: https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_lambda/Function.html#aws_cdk.aws_lambda.Function.handler
+    https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_lambda/Function.html#aws_cdk.aws_lambda.Function.handler
     """
     logger.info(f"Received event: {json.dumps(event)}")
     
@@ -54,17 +54,21 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         query_parameters = event.get('queryStringParameters') or {}
         
         # Handle CORS preflight requests
-        # Reference: https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_apigateway/Cors.html
+        # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_apigateway/Cors.html
         if http_method == 'OPTIONS':
             return create_response(HTTP_STATUS["OK"], {"message": "CORS preflight"})
         
         # Route to appropriate handler based on HTTP method and path
+        # purpose: Handle collection-level operations
+        # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_apigateway/Resource.html
         if path == '/targets':
             if http_method == 'GET':
                 return handle_list_targets(query_parameters)
             elif http_method == 'POST':
                 return handle_create_target(event.get('body', ''))
         # /targets/{target_id} resource with target_id parameter
+        # purpse: Handle individual target operations
+        # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_apigateway/Resource.html
         elif path.startswith('/targets/'):
             target_id = path_parameters.get('target_id')
             if not target_id:
@@ -105,7 +109,7 @@ def handle_create_target(body: str) -> Dict[str, Any]:
     Returns:
         Dict[str, Any]: API Gateway response
         
-    Reference: https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_apigateway/Method.html
+    https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_apigateway/Method.html
     """
     try:
         # Parse request body
@@ -153,7 +157,7 @@ def handle_get_target(target_id: str) -> Dict[str, Any]:
     Returns:
         Dict[str, Any]: API Gateway response
         
-    Reference: https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_apigateway/Resource.html
+    https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_apigateway/Resource.html
     """
     try:
         # Validate target ID
@@ -187,7 +191,7 @@ def handle_update_target(target_id: str, body: str) -> Dict[str, Any]:
     Returns:
         Dict[str, Any]: API Gateway response
         
-    Reference: https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_apigateway/Method.html
+    https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_apigateway/Method.html
     """
     try:
         # Validate target ID
@@ -245,7 +249,7 @@ def handle_delete_target(target_id: str) -> Dict[str, Any]:
     Returns:
         Dict[str, Any]: API Gateway response
         
-    Reference: https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_apigateway/Method.html
+    https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_apigateway/Method.html
     """
     try:
         # Validate target ID
@@ -278,7 +282,7 @@ def handle_list_targets(query_parameters: Dict[str, str]) -> Dict[str, Any]:
     Returns:
         Dict[str, Any]: API Gateway response
         
-    Reference: https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_apigateway/RequestValidator.html
+    https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_apigateway/RequestValidator.html
     """
     try:
         # Validate query parameters
@@ -314,7 +318,7 @@ def create_response(status_code: int, body: Dict[str, Any]) -> Dict[str, Any]:
     Returns:
         Dict[str, Any]: API Gateway response
         
-    Reference: https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_apigateway/LambdaIntegration.html
+    https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_apigateway/LambdaIntegration.html
     """
     return {
         "statusCode": status_code,
@@ -334,6 +338,6 @@ def create_error_response(status_code: int, error_message: str) -> Dict[str, Any
     Returns:
         Dict[str, Any]: API Gateway error response
         
-    Reference: https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_apigateway/ResponseType.html
+    https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_apigateway/ResponseType.html
     """
     return create_response(status_code, {"error": error_message})
