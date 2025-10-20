@@ -42,7 +42,7 @@ class ProjectPipelineStack(Stack):
                                             synth = synth)
 
         # All tests (unit/functional)
-        '''
+
         all_tests = pipelines.ShellStep("allTests",
             commands = ['cd ProjectPipeline/',
                         'pip install -r requirements-dev.txt',
@@ -53,6 +53,7 @@ class ProjectPipelineStack(Stack):
                         'python -m pytest -v'
                         ],
         )
+
         '''
         # Unit Tests
         unit_tests = pipelines.ShellStep("UnitTests",
@@ -79,6 +80,7 @@ class ProjectPipelineStack(Stack):
                         'pytest tests/functional -v'
                         ],
         )
+        '''
         # Integration Tests
         '''
         integration_tests = pipelines.ShellStep("IntegrationTests",
@@ -100,16 +102,16 @@ class ProjectPipelineStack(Stack):
         # env = {'region': 'us-east-1'}
 
         # There is no alpha, beta, gamma, or prod stages as there is an issue with deployment
-        testing = MyAppStage(self, 'Testing') # create stage
-        WHpipeline.add_stage(testing, pre=[unit_tests, functional_tests]) # add stage to pipeline
-        
+        testing = MyAppStage(self, 'testing') # create stage
+        WHpipeline.add_stage(testing, pre=[all_tests]) # add stage to pipeline
+
         '''
         # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.pipelines/ManualApprovalStep.html
         # implement after pipeline dployment is fixed
         # prod is the manual approaval step bellow
         
         '''
-        pre=[pipelines.ManualApprovalStep("PromoteToProd")]
+        pre=[pipelines.ManualApprovalStep("PromoteToProd",)]
 
 
 
