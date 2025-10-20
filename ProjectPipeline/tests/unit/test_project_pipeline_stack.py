@@ -34,7 +34,7 @@ def test_sqs_queue_created(get_stack):
 # Unit Test 1: Lambdas exists
 def test_lambda_count(get_stack):
     template = assertions.Template.from_stack(get_stack) # template is an instance of the applicatiopn stack (like a new tab on google)
-    template.resource_count_is("AWS::Lambda::Function", 3) # testing if there are two lambdas used (web health, db lambda, CRUD lambda))
+    template.resource_count_is("AWS::Lambda::Function", 3) # testing if there are three lambdas used (web health, db lambda, CRUD lambda))
 
 # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.assertions/Template.html 
 
