@@ -1,0 +1,34 @@
+{
+  "version": "48.0.0",
+  "files": {
+    "103cac5a8f680aa5134850fec67f38354d380942cd2ea22965f09df1f4709390": {
+      "displayName": "WHlambda/Code",
+      "source": {
+        "path": "..\\asset.103cac5a8f680aa5134850fec67f38354d380942cd2ea22965f09df1f4709390",
+        "packaging": "zip"
+      },
+      "destinations": {
+        "current_account-current_region-a7f624d6": {
+          "bucketName": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}",
+          "objectKey": "103cac5a8f680aa5134850fec67f38354d380942cd2ea22965f09df1f4709390.zip",
+          "assumeRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-file-publishing-role-${AWS::AccountId}-${AWS::Region}"
+        }
+      }
+    },
+    "24b7c261dea525cee10e2dba0e36f48101cb9f676ed73e095166711f6b16dfa4": {
+      "displayName": "Prod-ProdWebHealth Template",
+      "source": {
+        "path": "ThomasStackProdProdWebHealth747B7E11.template.json",
+        "packaging": "file"
+      },
+      "destinations": {
+        "current_account-current_region-77355ffa": {
+          "bucketName": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}",
+          "objectKey": "24b7c261dea525cee10e2dba0e36f48101cb9f676ed73e095166711f6b16dfa4.json",
+          "assumeRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-file-publishing-role-${AWS::AccountId}-${AWS::Region}"
+        }
+      }
+    }
+  },
+  "dockerImages": {}
+}

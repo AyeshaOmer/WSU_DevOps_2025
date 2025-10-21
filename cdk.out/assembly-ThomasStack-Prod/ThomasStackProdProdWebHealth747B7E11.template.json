@@ -1,0 +1,1055 @@
+{
+ "Resources": {
+  "WHlambdaServiceRole37287BA4": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "ThomasStack/Prod/ProdWebHealth/WHlambda/ServiceRole/Resource"
+   }
+  },
+  "WHlambdaServiceRoleDefaultPolicyF7DA3D6C": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": "cloudwatch:PutMetricData",
+       "Effect": "Allow",
+       "Resource": "*"
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "WHlambdaServiceRoleDefaultPolicyF7DA3D6C",
+    "Roles": [
+     {
+      "Ref": "WHlambdaServiceRole37287BA4"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "ThomasStack/Prod/ProdWebHealth/WHlambda/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "WHlambda6B69687C": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Code": {
+     "S3Bucket": {
+      "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}"
+     },
+     "S3Key": "103cac5a8f680aa5134850fec67f38354d380942cd2ea22965f09df1f4709390.zip"
+    },
+    "Handler": "WHLambda.lambda_handler",
+    "Role": {
+     "Fn::GetAtt": [
+      "WHlambdaServiceRole37287BA4",
+      "Arn"
+     ]
+    },
+    "Runtime": "python3.13",
+    "Timeout": 30
+   },
+   "DependsOn": [
+    "WHlambdaServiceRoleDefaultPolicyF7DA3D6C",
+    "WHlambdaServiceRole37287BA4"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "ThomasStack/Prod/ProdWebHealth/WHlambda/Resource",
+    "aws:asset:path": "..\\asset.103cac5a8f680aa5134850fec67f38354d380942cd2ea22965f09df1f4709390",
+    "aws:asset:is-bundled": false,
+    "aws:asset:property": "Code"
+   }
+  },
+  "CanaryScheduleRuleD6871090": {
+   "Type": "AWS::Events::Rule",
+   "Properties": {
+    "Description": "This is a test rule that invokes a lambda function every 5 minutes",
+    "ScheduleExpression": "rate(5 minutes)",
+    "State": "ENABLED",
+    "Targets": [
+     {
+      "Arn": {
+       "Fn::GetAtt": [
+        "WHlambda6B69687C",
+        "Arn"
+       ]
+      },
+      "Id": "Target0"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "ThomasStack/Prod/ProdWebHealth/CanaryScheduleRule/Resource"
+   }
+  },
+  "CanaryScheduleRuleAllowEventRuleThomasStackProdProdWebHealthWHlambda32275F1974E8BFD5": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "WHlambda6B69687C",
+      "Arn"
+     ]
+    },
+    "Principal": "events.amazonaws.com",
+    "SourceArn": {
+     "Fn::GetAtt": [
+      "CanaryScheduleRuleD6871090",
+      "Arn"
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "ThomasStack/Prod/ProdWebHealth/CanaryScheduleRule/AllowEventRuleThomasStackProdProdWebHealthWHlambda32275F19"
+   }
+  },
+  "WebHealthAlarms96722B1C": {
+   "Type": "AWS::SNS::Topic",
+   "Properties": {
+    "TopicName": "web-health-alarms"
+   },
+   "Metadata": {
+    "aws:cdk:path": "ThomasStack/Prod/ProdWebHealth/WebHealthAlarms/Resource"
+   }
+  },
+  "WebHealthAlarms22119278studentwesternsydneyeduau2C93EE16": {
+   "Type": "AWS::SNS::Subscription",
+   "Properties": {
+    "Endpoint": "22119278@student.westernsydney.edu.au",
+    "Protocol": "email",
+    "TopicArn": {
+     "Ref": "WebHealthAlarms96722B1C"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "ThomasStack/Prod/ProdWebHealth/WebHealthAlarms/22119278@student.westernsydney.edu.au/Resource"
+   }
+  },
+  "AlarmLogTable5602BB0A": {
+   "Type": "AWS::DynamoDB::GlobalTable",
+   "Properties": {
+    "AttributeDefinitions": [
+     {
+      "AttributeName": "AlarmName",
+      "AttributeType": "S"
+     },
+     {
+      "AttributeName": "Timestamp",
+      "AttributeType": "S"
+     }
+    ],
+    "BillingMode": "PAY_PER_REQUEST",
+    "KeySchema": [
+     {
+      "AttributeName": "AlarmName",
+      "KeyType": "HASH"
+     },
+     {
+      "AttributeName": "Timestamp",
+      "KeyType": "RANGE"
+     }
+    ],
+    "Replicas": [
+     {
+      "Region": {
+       "Ref": "AWS::Region"
+      }
+     }
+    ],
+    "SSESpecification": {
+     "SSEEnabled": false
+    },
+    "TableName": "AlarmLogTable"
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "ThomasStack/Prod/ProdWebHealth/AlarmLogTable/Resource"
+   }
+  },
+  "LogAlarmLambdaServiceRole96875AC9": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "ThomasStack/Prod/ProdWebHealth/LogAlarmLambda/ServiceRole/Resource"
+   }
+  },
+  "LogAlarmLambdaServiceRoleDefaultPolicy8165DBB4": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "dynamodb:BatchWriteItem",
+        "dynamodb:PutItem",
+        "dynamodb:UpdateItem",
+        "dynamodb:DeleteItem",
+        "dynamodb:DescribeTable"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::GetAtt": [
+         "AlarmLogTable5602BB0A",
+         "Arn"
+        ]
+       }
+      },
+      {
+       "Action": [
+        "dynamodb:PutItem",
+        "dynamodb:UpdateItem"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::GetAtt": [
+         "AlarmLogTable5602BB0A",
+         "Arn"
+        ]
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "LogAlarmLambdaServiceRoleDefaultPolicy8165DBB4",
+    "Roles": [
+     {
+      "Ref": "LogAlarmLambdaServiceRole96875AC9"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "ThomasStack/Prod/ProdWebHealth/LogAlarmLambda/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "LogAlarmLambda6DD2F23C": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Code": {
+     "S3Bucket": {
+      "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}"
+     },
+     "S3Key": "103cac5a8f680aa5134850fec67f38354d380942cd2ea22965f09df1f4709390.zip"
+    },
+    "Environment": {
+     "Variables": {
+      "TABLE_NAME": {
+       "Ref": "AlarmLogTable5602BB0A"
+      }
+     }
+    },
+    "Handler": "LogAlarmLambda.lambda_handler",
+    "Role": {
+     "Fn::GetAtt": [
+      "LogAlarmLambdaServiceRole96875AC9",
+      "Arn"
+     ]
+    },
+    "Runtime": "python3.13",
+    "Timeout": 30
+   },
+   "DependsOn": [
+    "LogAlarmLambdaServiceRoleDefaultPolicy8165DBB4",
+    "LogAlarmLambdaServiceRole96875AC9"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "ThomasStack/Prod/ProdWebHealth/LogAlarmLambda/Resource",
+    "aws:asset:path": "..\\asset.103cac5a8f680aa5134850fec67f38354d380942cd2ea22965f09df1f4709390",
+    "aws:asset:is-bundled": false,
+    "aws:asset:property": "Code"
+   }
+  },
+  "LogAlarmLambdaAllowInvokeThomasStackProdProdWebHealthWebHealthAlarms610BFB7A8B50B7A0": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "LogAlarmLambda6DD2F23C",
+      "Arn"
+     ]
+    },
+    "Principal": "sns.amazonaws.com",
+    "SourceArn": {
+     "Ref": "WebHealthAlarms96722B1C"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "ThomasStack/Prod/ProdWebHealth/LogAlarmLambda/AllowInvoke:ThomasStackProdProdWebHealthWebHealthAlarms610BFB7A"
+   }
+  },
+  "LogAlarmLambdaWebHealthAlarmsBBE2E374": {
+   "Type": "AWS::SNS::Subscription",
+   "Properties": {
+    "Endpoint": {
+     "Fn::GetAtt": [
+      "LogAlarmLambda6DD2F23C",
+      "Arn"
+     ]
+    },
+    "Protocol": "lambda",
+    "TopicArn": {
+     "Ref": "WebHealthAlarms96722B1C"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "ThomasStack/Prod/ProdWebHealth/LogAlarmLambda/WebHealthAlarms/Resource"
+   }
+  },
+  "AvailabilityAlarmskipqorg50CAD019": {
+   "Type": "AWS::CloudWatch::Alarm",
+   "Properties": {
+    "AlarmActions": [
+     {
+      "Ref": "WebHealthAlarms96722B1C"
+     }
+    ],
+    "AlarmDescription": "Availability < 1 for https://skipq.org",
+    "ComparisonOperator": "LessThanThreshold",
+    "DatapointsToAlarm": 1,
+    "EvaluationPeriods": 1,
+    "Metrics": [
+     {
+      "Id": "m1",
+      "Label": "availability: https://skipq.org",
+      "MetricStat": {
+       "Metric": {
+        "Dimensions": [
+         {
+          "Name": "WebsiteName",
+          "Value": "https://skipq.org"
+         }
+        ],
+        "MetricName": "availability",
+        "Namespace": "THOMASPROJECT_WSU2025"
+       },
+       "Period": 300,
+       "Stat": "Average"
+      },
+      "ReturnData": true
+     }
+    ],
+    "Threshold": 1,
+    "TreatMissingData": "breaching"
+   },
+   "Metadata": {
+    "aws:cdk:path": "ThomasStack/Prod/ProdWebHealth/AvailabilityAlarm-skipq_org/Resource"
+   }
+  },
+  "LatencyAlarmskipqorg9EF3AB1B": {
+   "Type": "AWS::CloudWatch::Alarm",
+   "Properties": {
+    "AlarmActions": [
+     {
+      "Ref": "WebHealthAlarms96722B1C"
+     }
+    ],
+    "AlarmDescription": "Latency > 2000 ms for https://skipq.org",
+    "ComparisonOperator": "GreaterThanThreshold",
+    "DatapointsToAlarm": 1,
+    "EvaluationPeriods": 1,
+    "Metrics": [
+     {
+      "Id": "m1",
+      "Label": "latency: https://skipq.org",
+      "MetricStat": {
+       "Metric": {
+        "Dimensions": [
+         {
+          "Name": "WebsiteName",
+          "Value": "https://skipq.org"
+         }
+        ],
+        "MetricName": "latency",
+        "Namespace": "THOMASPROJECT_WSU2025"
+       },
+       "Period": 300,
+       "Stat": "Average"
+      },
+      "ReturnData": true
+     }
+    ],
+    "Threshold": 2000,
+    "TreatMissingData": "breaching"
+   },
+   "Metadata": {
+    "aws:cdk:path": "ThomasStack/Prod/ProdWebHealth/LatencyAlarm-skipq_org/Resource"
+   }
+  },
+  "StatusAlarmskipqorgEA6A361C": {
+   "Type": "AWS::CloudWatch::Alarm",
+   "Properties": {
+    "AlarmActions": [
+     {
+      "Ref": "WebHealthAlarms96722B1C"
+     }
+    ],
+    "AlarmDescription": "Status > 399 for https://skipq.org",
+    "ComparisonOperator": "GreaterThanThreshold",
+    "DatapointsToAlarm": 1,
+    "EvaluationPeriods": 1,
+    "Metrics": [
+     {
+      "Id": "m1",
+      "Label": "status: https://skipq.org",
+      "MetricStat": {
+       "Metric": {
+        "Dimensions": [
+         {
+          "Name": "WebsiteName",
+          "Value": "https://skipq.org"
+         }
+        ],
+        "MetricName": "status",
+        "Namespace": "THOMASPROJECT_WSU2025"
+       },
+       "Period": 300,
+       "Stat": "Average"
+      },
+      "ReturnData": true
+     }
+    ],
+    "Threshold": 399,
+    "TreatMissingData": "breaching"
+   },
+   "Metadata": {
+    "aws:cdk:path": "ThomasStack/Prod/ProdWebHealth/StatusAlarm-skipq_org/Resource"
+   }
+  },
+  "AvailabilityAlarmexamplecom37328851": {
+   "Type": "AWS::CloudWatch::Alarm",
+   "Properties": {
+    "AlarmActions": [
+     {
+      "Ref": "WebHealthAlarms96722B1C"
+     }
+    ],
+    "AlarmDescription": "Availability < 1 for https://example.com",
+    "ComparisonOperator": "LessThanThreshold",
+    "DatapointsToAlarm": 1,
+    "EvaluationPeriods": 1,
+    "Metrics": [
+     {
+      "Id": "m1",
+      "Label": "availability: https://example.com",
+      "MetricStat": {
+       "Metric": {
+        "Dimensions": [
+         {
+          "Name": "WebsiteName",
+          "Value": "https://example.com"
+         }
+        ],
+        "MetricName": "availability",
+        "Namespace": "THOMASPROJECT_WSU2025"
+       },
+       "Period": 300,
+       "Stat": "Average"
+      },
+      "ReturnData": true
+     }
+    ],
+    "Threshold": 1,
+    "TreatMissingData": "breaching"
+   },
+   "Metadata": {
+    "aws:cdk:path": "ThomasStack/Prod/ProdWebHealth/AvailabilityAlarm-example_com/Resource"
+   }
+  },
+  "LatencyAlarmexamplecom32284B56": {
+   "Type": "AWS::CloudWatch::Alarm",
+   "Properties": {
+    "AlarmActions": [
+     {
+      "Ref": "WebHealthAlarms96722B1C"
+     }
+    ],
+    "AlarmDescription": "Latency > 2000 ms for https://example.com",
+    "ComparisonOperator": "GreaterThanThreshold",
+    "DatapointsToAlarm": 1,
+    "EvaluationPeriods": 1,
+    "Metrics": [
+     {
+      "Id": "m1",
+      "Label": "latency: https://example.com",
+      "MetricStat": {
+       "Metric": {
+        "Dimensions": [
+         {
+          "Name": "WebsiteName",
+          "Value": "https://example.com"
+         }
+        ],
+        "MetricName": "latency",
+        "Namespace": "THOMASPROJECT_WSU2025"
+       },
+       "Period": 300,
+       "Stat": "Average"
+      },
+      "ReturnData": true
+     }
+    ],
+    "Threshold": 2000,
+    "TreatMissingData": "breaching"
+   },
+   "Metadata": {
+    "aws:cdk:path": "ThomasStack/Prod/ProdWebHealth/LatencyAlarm-example_com/Resource"
+   }
+  },
+  "StatusAlarmexamplecomD749850E": {
+   "Type": "AWS::CloudWatch::Alarm",
+   "Properties": {
+    "AlarmActions": [
+     {
+      "Ref": "WebHealthAlarms96722B1C"
+     }
+    ],
+    "AlarmDescription": "Status > 399 for https://example.com",
+    "ComparisonOperator": "GreaterThanThreshold",
+    "DatapointsToAlarm": 1,
+    "EvaluationPeriods": 1,
+    "Metrics": [
+     {
+      "Id": "m1",
+      "Label": "status: https://example.com",
+      "MetricStat": {
+       "Metric": {
+        "Dimensions": [
+         {
+          "Name": "WebsiteName",
+          "Value": "https://example.com"
+         }
+        ],
+        "MetricName": "status",
+        "Namespace": "THOMASPROJECT_WSU2025"
+       },
+       "Period": 300,
+       "Stat": "Average"
+      },
+      "ReturnData": true
+     }
+    ],
+    "Threshold": 399,
+    "TreatMissingData": "breaching"
+   },
+   "Metadata": {
+    "aws:cdk:path": "ThomasStack/Prod/ProdWebHealth/StatusAlarm-example_com/Resource"
+   }
+  },
+  "AvailabilityAlarmwwwwikipediaorg6A2911F4": {
+   "Type": "AWS::CloudWatch::Alarm",
+   "Properties": {
+    "AlarmActions": [
+     {
+      "Ref": "WebHealthAlarms96722B1C"
+     }
+    ],
+    "AlarmDescription": "Availability < 1 for https://www.wikipedia.org",
+    "ComparisonOperator": "LessThanThreshold",
+    "DatapointsToAlarm": 1,
+    "EvaluationPeriods": 1,
+    "Metrics": [
+     {
+      "Id": "m1",
+      "Label": "availability: https://www.wikipedia.org",
+      "MetricStat": {
+       "Metric": {
+        "Dimensions": [
+         {
+          "Name": "WebsiteName",
+          "Value": "https://www.wikipedia.org"
+         }
+        ],
+        "MetricName": "availability",
+        "Namespace": "THOMASPROJECT_WSU2025"
+       },
+       "Period": 300,
+       "Stat": "Average"
+      },
+      "ReturnData": true
+     }
+    ],
+    "Threshold": 1,
+    "TreatMissingData": "breaching"
+   },
+   "Metadata": {
+    "aws:cdk:path": "ThomasStack/Prod/ProdWebHealth/AvailabilityAlarm-www_wikipedia_org/Resource"
+   }
+  },
+  "LatencyAlarmwwwwikipediaorgAB4E9BBF": {
+   "Type": "AWS::CloudWatch::Alarm",
+   "Properties": {
+    "AlarmActions": [
+     {
+      "Ref": "WebHealthAlarms96722B1C"
+     }
+    ],
+    "AlarmDescription": "Latency > 2000 ms for https://www.wikipedia.org",
+    "ComparisonOperator": "GreaterThanThreshold",
+    "DatapointsToAlarm": 1,
+    "EvaluationPeriods": 1,
+    "Metrics": [
+     {
+      "Id": "m1",
+      "Label": "latency: https://www.wikipedia.org",
+      "MetricStat": {
+       "Metric": {
+        "Dimensions": [
+         {
+          "Name": "WebsiteName",
+          "Value": "https://www.wikipedia.org"
+         }
+        ],
+        "MetricName": "latency",
+        "Namespace": "THOMASPROJECT_WSU2025"
+       },
+       "Period": 300,
+       "Stat": "Average"
+      },
+      "ReturnData": true
+     }
+    ],
+    "Threshold": 2000,
+    "TreatMissingData": "breaching"
+   },
+   "Metadata": {
+    "aws:cdk:path": "ThomasStack/Prod/ProdWebHealth/LatencyAlarm-www_wikipedia_org/Resource"
+   }
+  },
+  "StatusAlarmwwwwikipediaorg6FD5D144": {
+   "Type": "AWS::CloudWatch::Alarm",
+   "Properties": {
+    "AlarmActions": [
+     {
+      "Ref": "WebHealthAlarms96722B1C"
+     }
+    ],
+    "AlarmDescription": "Status > 399 for https://www.wikipedia.org",
+    "ComparisonOperator": "GreaterThanThreshold",
+    "DatapointsToAlarm": 1,
+    "EvaluationPeriods": 1,
+    "Metrics": [
+     {
+      "Id": "m1",
+      "Label": "status: https://www.wikipedia.org",
+      "MetricStat": {
+       "Metric": {
+        "Dimensions": [
+         {
+          "Name": "WebsiteName",
+          "Value": "https://www.wikipedia.org"
+         }
+        ],
+        "MetricName": "status",
+        "Namespace": "THOMASPROJECT_WSU2025"
+       },
+       "Period": 300,
+       "Stat": "Average"
+      },
+      "ReturnData": true
+     }
+    ],
+    "Threshold": 399,
+    "TreatMissingData": "breaching"
+   },
+   "Metadata": {
+    "aws:cdk:path": "ThomasStack/Prod/ProdWebHealth/StatusAlarm-www_wikipedia_org/Resource"
+   }
+  },
+  "WHLambdaDashboardE098A9ED": {
+   "Type": "AWS::CloudWatch::Dashboard",
+   "Properties": {
+    "DashboardBody": {
+     "Fn::Join": [
+      "",
+      [
+       "{\"widgets\":[{\"type\":\"metric\",\"width\":6,\"height\":6,\"x\":0,\"y\":0,\"properties\":{\"view\":\"timeSeries\",\"title\":\"Availability (avg by URL, 5m)\",\"region\":\"",
+       {
+        "Ref": "AWS::Region"
+       },
+       "\",\"metrics\":[[\"THOMASPROJECT_WSU2025\",\"availability\",\"WebsiteName\",\"https://skipq.org\",{\"label\":\"availability: https://skipq.org\"}],[\"THOMASPROJECT_WSU2025\",\"availability\",\"WebsiteName\",\"https://example.com\",{\"label\":\"availability: https://example.com\"}],[\"THOMASPROJECT_WSU2025\",\"availability\",\"WebsiteName\",\"https://www.wikipedia.org\",{\"label\":\"availability: https://www.wikipedia.org\"}]],\"yAxis\":{},\"legend\":{\"position\":\"right\"},\"period\":300}},{\"type\":\"metric\",\"width\":6,\"height\":6,\"x\":0,\"y\":6,\"properties\":{\"view\":\"timeSeries\",\"title\":\"Latency (avg by URL, 5m)\",\"region\":\"",
+       {
+        "Ref": "AWS::Region"
+       },
+       "\",\"metrics\":[[\"THOMASPROJECT_WSU2025\",\"latency\",\"WebsiteName\",\"https://skipq.org\",{\"label\":\"latency: https://skipq.org\"}],[\"THOMASPROJECT_WSU2025\",\"latency\",\"WebsiteName\",\"https://example.com\",{\"label\":\"latency: https://example.com\"}],[\"THOMASPROJECT_WSU2025\",\"latency\",\"WebsiteName\",\"https://www.wikipedia.org\",{\"label\":\"latency: https://www.wikipedia.org\"}]],\"yAxis\":{},\"legend\":{\"position\":\"right\"},\"period\":300}},{\"type\":\"metric\",\"width\":6,\"height\":6,\"x\":0,\"y\":12,\"properties\":{\"view\":\"timeSeries\",\"title\":\"HTTP Status (avg by URL, 5m)\",\"region\":\"",
+       {
+        "Ref": "AWS::Region"
+       },
+       "\",\"metrics\":[[\"THOMASPROJECT_WSU2025\",\"status\",\"WebsiteName\",\"https://skipq.org\",{\"label\":\"status: https://skipq.org\"}],[\"THOMASPROJECT_WSU2025\",\"status\",\"WebsiteName\",\"https://example.com\",{\"label\":\"status: https://example.com\"}],[\"THOMASPROJECT_WSU2025\",\"status\",\"WebsiteName\",\"https://www.wikipedia.org\",{\"label\":\"status: https://www.wikipedia.org\"}]],\"yAxis\":{},\"legend\":{\"position\":\"right\"},\"period\":300}}]}"
+      ]
+     ]
+    },
+    "DashboardName": "URLMONITOR_DASHBOARD"
+   },
+   "Metadata": {
+    "aws:cdk:path": "ThomasStack/Prod/ProdWebHealth/WHLambdaDashboard/Resource"
+   }
+  },
+  "CDKMetadata": {
+   "Type": "AWS::CDK::Metadata",
+   "Properties": {
+    "Analytics": "v2:deflate64:H4sIAAAAAAAA/02OzU7DMBCEn6V3Z6GJeIAWBNcoqbhW6x9aN/6pvDZRZPndkRNAPc03s6PVtNDuX+B5hzM1Qk6N0RzyGFFMDGc6Z4OWS4T8npyI2jv2+uUeuVfBaiLtXWEaLeTBG1UPq/beaLGsvZUKo+6MRCoSHKow6uCYxKTiEUkx9a1cJMhD+n2SjCqMHEE++bsWNdtgTJxE0Pe/HY++MLk4tF5yyCfkRn22tfJhPEezBoUJ45OcMYor5IPBYGtjgzekK/cYZI3+TSlsUORTEIqt08eIF+0uhfVLvHr31MG+g253I62bkFzUVsGw6Q9gWaqcZQEAAA=="
+   },
+   "Metadata": {
+    "aws:cdk:path": "ThomasStack/Prod/ProdWebHealth/CDKMetadata/Default"
+   },
+   "Condition": "CDKMetadataAvailable"
+  }
+ },
+ "Conditions": {
+  "CDKMetadataAvailable": {
+   "Fn::Or": [
+    {
+     "Fn::Or": [
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "af-south-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-east-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-northeast-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-northeast-2"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-northeast-3"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-south-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-south-2"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-southeast-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-southeast-2"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-southeast-3"
+       ]
+      }
+     ]
+    },
+    {
+     "Fn::Or": [
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-southeast-4"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ca-central-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ca-west-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "cn-north-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "cn-northwest-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "eu-central-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "eu-central-2"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "eu-north-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "eu-south-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "eu-south-2"
+       ]
+      }
+     ]
+    },
+    {
+     "Fn::Or": [
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "eu-west-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "eu-west-2"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "eu-west-3"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "il-central-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "me-central-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "me-south-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "sa-east-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "us-east-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "us-east-2"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "us-west-1"
+       ]
+      }
+     ]
+    },
+    {
+     "Fn::Equals": [
+      {
+       "Ref": "AWS::Region"
+      },
+      "us-west-2"
+     ]
+    }
+   ]
+  }
+ },
+ "Parameters": {
+  "BootstrapVersion": {
+   "Type": "AWS::SSM::Parameter::Value<String>",
+   "Default": "/cdk-bootstrap/hnb659fds/version",
+   "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]"
+  }
+ },
+ "Rules": {
+  "CheckBootstrapVersion": {
+   "Assertions": [
+    {
+     "Assert": {
+      "Fn::Not": [
+       {
+        "Fn::Contains": [
+         [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5"
+         ],
+         {
+          "Ref": "BootstrapVersion"
+         }
+        ]
+       }
+      ]
+     },
+     "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI."
+    }
+   ]
+  }
+ }
+}

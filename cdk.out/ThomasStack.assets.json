@@ -1,0 +1,20 @@
+{
+  "version": "48.0.0",
+  "files": {
+    "42ee14cfe53df6231445fc156ae050af5af2918fd909fee2db80bebbd7608820": {
+      "displayName": "ThomasStack Template",
+      "source": {
+        "path": "ThomasStack.template.json",
+        "packaging": "file"
+      },
+      "destinations": {
+        "current_account-current_region-8149c134": {
+          "bucketName": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}",
+          "objectKey": "42ee14cfe53df6231445fc156ae050af5af2918fd909fee2db80bebbd7608820.json",
+          "assumeRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-file-publishing-role-${AWS::AccountId}-${AWS::Region}"
+        }
+      }
+    }
+  },
+  "dockerImages": {}
+}

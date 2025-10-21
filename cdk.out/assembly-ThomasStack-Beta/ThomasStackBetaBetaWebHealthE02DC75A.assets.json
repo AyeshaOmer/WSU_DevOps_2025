@@ -1,0 +1,34 @@
+{
+  "version": "48.0.0",
+  "files": {
+    "103cac5a8f680aa5134850fec67f38354d380942cd2ea22965f09df1f4709390": {
+      "displayName": "WHlambda/Code",
+      "source": {
+        "path": "..\\asset.103cac5a8f680aa5134850fec67f38354d380942cd2ea22965f09df1f4709390",
+        "packaging": "zip"
+      },
+      "destinations": {
+        "current_account-current_region-a7f624d6": {
+          "bucketName": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}",
+          "objectKey": "103cac5a8f680aa5134850fec67f38354d380942cd2ea22965f09df1f4709390.zip",
+          "assumeRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-file-publishing-role-${AWS::AccountId}-${AWS::Region}"
+        }
+      }
+    },
+    "ab7e84c3c66495a2e2d638802853abfe61eeaae3159812e44c1ca081cb1d5e9c": {
+      "displayName": "Beta-BetaWebHealth Template",
+      "source": {
+        "path": "ThomasStackBetaBetaWebHealthE02DC75A.template.json",
+        "packaging": "file"
+      },
+      "destinations": {
+        "current_account-current_region-d450d40d": {
+          "bucketName": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}",
+          "objectKey": "ab7e84c3c66495a2e2d638802853abfe61eeaae3159812e44c1ca081cb1d5e9c.json",
+          "assumeRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-file-publishing-role-${AWS::AccountId}-${AWS::Region}"
+        }
+      }
+    }
+  },
+  "dockerImages": {}
+}
