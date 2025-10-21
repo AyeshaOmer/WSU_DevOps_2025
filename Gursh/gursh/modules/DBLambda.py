@@ -12,7 +12,7 @@ DIMENSION_NAME = os.environ.get("DIMENSION_NAME", "URL")
 
 ddb = boto3.resource("dynamodb").Table(TABLE_NAME)
 
-# Example: "... datapoints [1234.0] ..."
+
 VALUE_RE = re.compile(r"datapoints\s*\[\s*([-+]?\d*\.?\d+)\s*\]", re.IGNORECASE)
 
 
@@ -55,7 +55,7 @@ def _dimensions_to_dict(trigger_dims):
 
 
 def _put_item(item: dict):
-    # >>> SIMPLIFIED: drop None fields, write once
+
     item = {k: v for k, v in item.items() if v is not None}
     ddb.put_item(Item=item)
 
@@ -69,7 +69,7 @@ def lambda_handler(event, context):
             msg_raw = r["Sns"]["Message"]
             msg = json.loads(msg_raw) if isinstance(msg_raw, str) else msg_raw
 
-            # >>> SIMPLIFIED: single normalized extraction
+           
             alarm_name = msg.get("AlarmName", "UnknownAlarm")
             alarm_state = msg.get("NewStateValue", "UNKNOWN")
             state_reason = msg.get("NewStateReason", "")

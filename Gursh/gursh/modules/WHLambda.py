@@ -14,7 +14,7 @@ DIMENSION_NAME = os.environ.get("DIMENSION_NAME", "URL")
 cw  = boto3.client("cloudwatch")
 ddb = boto3.resource("dynamodb")
 
-# Monkeypatch-friendly handles (tests can set these directly)
+
 resT = None
 urlsT = None
 
@@ -43,7 +43,7 @@ def _get_urls():
             ExpressionAttributeNames={"#u": "url"},
             ExclusiveStartKey=lek,
         )
-    # de-dup preserve order
+
     seen, ordered = set(), []
     for u in urls:
         if u not in seen:
