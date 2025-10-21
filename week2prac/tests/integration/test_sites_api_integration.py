@@ -4,7 +4,6 @@ import boto3
 import requests
 import uuid
 from time import sleep
-from moto import mock_dynamodb
 import os
 from typing import Dict, Any, Optional
 
