@@ -92,7 +92,7 @@ class PhuocTaiTranLambdaStack(Stack):
         rest_api_name="PhuocTaiTranLambdaAPI",
         )
         # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_scheduler/README.html
-        # Schedule the Lambda function to run every 5 minutes (can be deleted as cloudwatch event has a trigger already)
+        # Schedule the Lambda function to run every 5 minutes 
         rule = events.Rule(
             self, "ScheduleRule",
             schedule=events.Schedule.rate(Duration.minutes(5)),
@@ -101,7 +101,7 @@ class PhuocTaiTranLambdaStack(Stack):
         )
 
         # SNS TOPIC
-        #https://docs.aws.amazo# https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.k/api/v//pyth.htmlaws_snsTopic
+        #https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_sns/README.html
         topic = sns.Topic(self, "Alarm notification", display_name="SNS notification for www.com")
 
         #https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_sns_subscriptions/EmailSubscription.html

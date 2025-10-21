@@ -3,7 +3,6 @@ from aws_cdk import (
     Stack,
     aws_lambda as _lambda,
     aws_apigateway as apigw,
-    aws_s3 as s3,
     aws_iam as iam,
     aws_dynamodb as dynamodb,
     RemovalPolicy,
@@ -173,17 +172,6 @@ class Project2Stack(Stack):
             ]
         )
 
-        # Example S3 bucket for crawler data storage
-        bucket = s3.Bucket(
-            self, "Project2Bucket",
-            bucket_name=f"project2-bucket-{self.account}-{self.region}",
-            removal_policy=RemovalPolicy.DESTROY,
-            auto_delete_objects=True
-        )
-
-        # Grant Lambda permissions to access S3 bucket
-        bucket.grant_read_write(crud_api_lambda)
-
         # CloudFormation outputs
         #  https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk/CfnOutput.html
         CfnOutput(
@@ -196,10 +184,4 @@ class Project2Stack(Stack):
             self, "DynamoDBTableName",
             value=crawler_targets_table.table_name,
             description="Name of the DynamoDB table for crawler targets"
-        )
-        
-        CfnOutput(
-            self, "S3BucketName",
-            value=bucket.bucket_name,
-            description="Name of the S3 bucket for crawler data"
         )

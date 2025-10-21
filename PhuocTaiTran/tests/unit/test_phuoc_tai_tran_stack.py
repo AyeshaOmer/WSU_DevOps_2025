@@ -20,6 +20,13 @@ def test_sqs_queue_created():
 
 # https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.assertions/README.html
 def test_lambda():
+    """
+    Test Lambda function count:
+    1. PhuocTaiTranLambda (fn) - Main metrics collection function
+    2. PhuocTaiTranHelloLambda (fn_hello) - Hello world function  
+    3. PhuocTaiTranDBLambda (fn_db) - Database alarm handler function
+    Total expected: 3 Lambda functions
+    """
     app = core.App()
     stack = PhuocTaiTranLambdaStack(app, "phuoc-tai-tran", stage_name="test")
     template = assertions.Template.from_stack(stack)

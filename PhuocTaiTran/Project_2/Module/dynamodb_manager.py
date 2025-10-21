@@ -2,7 +2,7 @@
 DynamoDB operations for Project 2 Web Crawler API
 This module handles all database operations for managing crawler targets.
 
-Reference: https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_dynamodb/README.html
+https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_dynamodb/README.html
 """
 
 import boto3
@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 # Initialize DynamoDB resource
-# Reference: https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_dynamodb/Table.html
+# https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_dynamodb/Table.html
 dynamodb = boto3.resource('dynamodb')
 
 
@@ -30,7 +30,7 @@ class DynamoDBManager:
     """
     DynamoDB operations manager for web crawler targets.
     
-    Reference: https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_dynamodb/TableV2.html
+    https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_dynamodb/TableV2.html
     """
     
     def __init__(self, table_name: str = None):
@@ -40,7 +40,7 @@ class DynamoDBManager:
         Args:
             table_name (str): Name of the DynamoDB table
             
-        Reference: https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_dynamodb/Table.html#aws_cdk.aws_dynamodb.Table.table_name
+        https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_dynamodb/Table.html#aws_cdk.aws_dynamodb.Table.table_name
         """
         self.table_name = table_name or CRAWLER_TABLE_NAME
         self.table = dynamodb.Table(self.table_name)
@@ -55,7 +55,7 @@ class DynamoDBManager:
         Returns:
             Dict[str, Any]: API response with created target data
             
-        Reference: https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_dynamodb/Table.html#aws_cdk.aws_dynamodb.Table.grant_write_data
+        https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_dynamodb/Table.html#aws_cdk.aws_dynamodb.Table.grant_write_data
         """
         try:
             # Check if target already exists
@@ -119,7 +119,7 @@ class DynamoDBManager:
         Returns:
             Dict[str, Any]: API response with target data
             
-        Reference: https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_dynamodb/Table.html#aws_cdk.aws_dynamodb.Table.grant_read_data
+        https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_dynamodb/Table.html#aws_cdk.aws_dynamodb.Table.grant_read_data
         """
         try:
             response = self.table.get_item(
@@ -174,7 +174,7 @@ class DynamoDBManager:
         Returns:
             Dict[str, Any]: API response with updated target data
             
-        Reference: https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_dynamodb/Table.html#aws_cdk.aws_dynamodb.Table.grant_read_write_data
+        https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_dynamodb/Table.html#aws_cdk.aws_dynamodb.Table.grant_read_write_data
         """
         try:
             # Check if target exists
@@ -254,7 +254,7 @@ class DynamoDBManager:
         Returns:
             Dict[str, Any]: API response
             
-        Reference: https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_dynamodb/Table.html#aws_cdk.aws_dynamodb.Table.grant_write_data
+        https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_dynamodb/Table.html#aws_cdk.aws_dynamodb.Table.grant_write_data
         """
         try:
             # Check if target exists
@@ -310,7 +310,7 @@ class DynamoDBManager:
         Returns:
             Dict[str, Any]: API response with list of targets
             
-        Reference: https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_dynamodb/GlobalSecondaryIndex.html
+        https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_dynamodb/GlobalSecondaryIndex.html
         """
         try:
             targets = []
@@ -369,7 +369,7 @@ class DynamoDBManager:
         Returns:
             Data with floats converted to Decimal
             
-        Reference: https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_dynamodb/AttributeType.html
+        https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_dynamodb/AttributeType.html
         """
         if isinstance(data, dict):
             return {key: self._convert_floats_to_decimal(value) for key, value in data.items()}
@@ -389,7 +389,7 @@ class DynamoDBManager:
         Returns:
             Data with Decimals converted to float
             
-        Reference: https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_dynamodb/AttributeType.html
+        https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_dynamodb/AttributeType.html
         """
         if isinstance(data, dict):
             return {key: self._convert_decimal_to_float(value) for key, value in data.items()}

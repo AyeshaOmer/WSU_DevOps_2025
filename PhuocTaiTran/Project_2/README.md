@@ -61,7 +61,6 @@ https://{api-id}.execute-api.{region}.amazonaws.com/prod
 - **AWS Lambda**: Serverless compute (Python 3.12)
 - **Amazon API Gateway**: RESTful API management
 - **Amazon DynamoDB**: NoSQL database with GSI
-- **Amazon S3**: File storage for crawler data
 - **AWS CloudWatch**: Monitoring and logging
 - **AWS IAM**: Security and access control
 
