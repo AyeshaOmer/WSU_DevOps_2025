@@ -1,3 +1,4 @@
+# lambda_function.py
 import boto3
 import urllib3
 import time
@@ -13,25 +14,34 @@ logger = logging.getLogger(__name__)
 
 
 http = urllib3.PoolManager(
-    timeout=urllib3.Timeout(connect=10.0, read=10.0),
-    retries=urllib3.Retry(total=False) # Disable retries to match original behavior
+    # Set a combined 10-second timeout for connection and read
+    timeout=urllib3.Timeout(connect=10.0, read=10.0), 
+    # Disable retries as we want a fast failure/success signal
+    retries=urllib3.Retry(total=False) 
 )
 
 def lambda_handler(event, context):
+    """
+    The main handler for the Lambda function. Pings a target URL, calculates 
+    latency and availability, and pushes custom metrics to CloudWatch.
+    """
     try:
-        # Check ping timing and latency
+        # --- 1. Perform HTTP Request and Measure Latency ---
         start_time = time.time()
         
-        # 10-second timeout for the request to prevent long-running calls
+        # Use the URL defined in constants
         response = http.request('GET', constants.WEBSITE)
+        
         end_time = time.time()
         latency_ms = (end_time - start_time) * 1000
 
-        # Determine availability: 1 for success (status code 200), 0 for failure
+        # Determine availability: 1 for success (status code 200), 0 for other status codes
         availability_status = 1 if response.status == 200 else 0
+        
+        # Log the outcome
+        logger.info(f"Ping successful. Status: {response.status}, Latency: {latency_ms:.2f}ms")
 
-        # Use the reusable push_metric function to send data to CloudWatch
-        # Push the availability metric
+        # --- 2. Push Availability Metric ---
         push_to_cloudwatch.push_metric(
             namespace=constants.WAN_NAMESPACE,
             metric_name=constants.WAN_MON_AVAILABILITY,
@@ -40,7 +50,7 @@ def lambda_handler(event, context):
             dimensions=[{'Name': 'URL', 'Value': constants.WEBSITE}]
         )
 
-        # Push the latency metric
+        # --- 3. Push Latency Metric ---
         push_to_cloudwatch.push_metric(
             namespace=constants.WAN_NAMESPACE,
             metric_name=constants.WAN_MON_LATENCY,
@@ -49,13 +59,13 @@ def lambda_handler(event, context):
             dimensions=[{'Name': 'URL', 'Value': constants.WEBSITE}]
         )
         
-        # Check and push SSL certificate expiry metric
+        # --- 4. Check and push SSL certificate expiry metric ---
         push_to_cloudwatch.check_ssl_expiration_and_push_metric(
             website=constants.WEBSITE,
             namespace=constants.WAN_NAMESPACE
         )
 
-        logger.info(f"Successfully published metrics for {constants.WEBSITE}.")
+        logger.info(f"Successfully published all metrics for {constants.WEBSITE}.")
 
         return {
             'statusCode': 200,
@@ -63,10 +73,10 @@ def lambda_handler(event, context):
         }
 
     except (urllib3.exceptions.NewConnectionError, urllib3.exceptions.MaxRetryError, urllib3.exceptions.TimeoutError) as e:
-        # If the request fails due to a network or timeout issue, push a failure metric for both availability and latency
-        logger.error(f"Failed to reach {constants.WEBSITE}: {e}")
+        # --- Handle Network/Timeout Failures ---
+        logger.error(f"Failed to reach {constants.WEBSITE} (Network/Timeout): {e}")
 
-        # Push an availability status of 0
+        # Push a failure metric for availability (0)
         push_to_cloudwatch.push_metric(
             namespace=constants.WAN_NAMESPACE,
             metric_name=constants.WAN_MON_AVAILABILITY,
@@ -75,7 +85,7 @@ def lambda_handler(event, context):
             dimensions=[{'Name': 'URL', 'Value': constants.WEBSITE}]
         )
 
-        # Push a latency value of -1 to indicate a failure
+        # Push a latency value of -1 to explicitly indicate a failure/timeout in the graph
         push_to_cloudwatch.push_metric(
             namespace=constants.WAN_NAMESPACE,
             metric_name=constants.WAN_MON_LATENCY,
@@ -84,17 +94,16 @@ def lambda_handler(event, context):
             dimensions=[{'Name': 'URL', 'Value': constants.WEBSITE}]
         )
         
-        # submit a SSL failure.
         logger.warning(f"Skipping SSL certificate check due to request failure for {constants.WEBSITE}.")
 
         return {
             'statusCode': 500,
-            'body': f'Failed to monitor website: {e}'
+            'body': f'Failed to monitor website due to network error: {e}'
         }
 
     except Exception as e:
-        # Catch-all for any other unexpected errors
-        logger.error(f"An unexpected error occurred: {e}")
+        # --- Catch-all for any other unexpected errors ---
+        logger.error(f"An unexpected error occurred during monitoring: {e}")
         return {
             'statusCode': 500,
             'body': f'An unexpected error occurred: {e}'
