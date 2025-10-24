@@ -1,0 +1,34 @@
+{
+  "version": "48.0.0",
+  "files": {
+    "103cac5a8f680aa5134850fec67f38354d380942cd2ea22965f09df1f4709390": {
+      "displayName": "WHlambda/Code",
+      "source": {
+        "path": "..\\asset.103cac5a8f680aa5134850fec67f38354d380942cd2ea22965f09df1f4709390",
+        "packaging": "zip"
+      },
+      "destinations": {
+        "current_account-current_region-a7f624d6": {
+          "bucketName": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}",
+          "objectKey": "103cac5a8f680aa5134850fec67f38354d380942cd2ea22965f09df1f4709390.zip",
+          "assumeRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-file-publishing-role-${AWS::AccountId}-${AWS::Region}"
+        }
+      }
+    },
+    "b5da32a10f1321b8fdafb4173df0eb596556aa916b1d30802e3ed43a34ccaa48": {
+      "displayName": "Gamma-GammaWebHealth Template",
+      "source": {
+        "path": "ThomasStackGammaGammaWebHealth7C91BE68.template.json",
+        "packaging": "file"
+      },
+      "destinations": {
+        "current_account-current_region-b0d1678b": {
+          "bucketName": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}",
+          "objectKey": "b5da32a10f1321b8fdafb4173df0eb596556aa916b1d30802e3ed43a34ccaa48.json",
+          "assumeRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-file-publishing-role-${AWS::AccountId}-${AWS::Region}"
+        }
+      }
+    }
+  },
+  "dockerImages": {}
+}
